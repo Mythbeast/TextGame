@@ -1,0 +1,51 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "type": "java",
+        "name": "Launch Main",
+        "request": "launch",
+        "mainClass": "TextGame.Main",  // Replace with your actual fully qualified main class name
+        "vmArgs": "--module-path \"C:/Program Files/Java/javafx-sdk-22.0.2/lib\" --add-modules javafx.controls,javafx.fxml",
+        "classPaths": [
+          "TextGame/lib/sqlite-jdbc-3.46.1.0.jar",
+          "TextGame/lib/slf4j-api-2.0.0.jar",
+          "TextGame/lib/slf4j-simple-2.0.16.jar",
+          "out"  // Ensure this points to the directory where compiled classes are located
+        ],
+        "projectName": "Coding Projects_7dc77eb8"
+      },
+      {
+        "type": "java",
+        "name": "ExampleCode",
+        "request": "launch",
+        "mainClass": "TextGame.ExampleCode",
+        "projectName": "Coding Projects_7dc77eb8"
+      },
+      {
+        "type": "java",
+        "name": "MyFirstJavaFXApp",
+        "request": "launch",
+        "mainClass": "TextGame.MyFirstJavaFXApp",
+        "projectName": "Coding Projects_7dc77eb8"
+      },
+      {
+        "type": "java",
+        "name": "TextGame",
+        "request": "launch",
+        "mainClass": "TextGame.TextGame",
+        "projectName": "Coding Projects_7dc77eb8"
+      },
+      {
+        "name": "Python Debugger: Current File",
+        "type": "debugpy",
+        "request": "launch",
+        "program": "${file}",
+        "console": "integratedTerminal"
+      }
+    ]
+  }
