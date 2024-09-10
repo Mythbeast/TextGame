@@ -7,7 +7,9 @@ public class Area {
   private String ID;
   private String name;
   // hashmaps contain list of things to find, as well as percentages (integers only)
-  private HashMap<String, Integer>[] subsequentAreas;
+  private List<Object> subsequentAreas;
+  private int[] areaWeights;
+  private int[] areaWeightThresholds;
   private List<Object> monsterList;
   private int[] monsterWeights;
   private int[] monsterWeightThresholds;
@@ -26,7 +28,7 @@ Area(DatabaseManager db, String areaID) {
   this.db = db;
   this.ID = areaID;
 
-  this.info = db.getAreaInfo(areaID);
+  this.info = db.getAreaInfo(this.ID);
   this.name = (String) info.get(0);
   this.areaChance = (Integer) info.get(1);
   this.monsterChance = (Integer) info.get(2);
@@ -35,14 +37,31 @@ Area(DatabaseManager db, String areaID) {
   // create array of thresholds for the random number
   // chances are being added so that when a random number is generated between 1 and 100, it falls into ...<=areaC, areaC<..<=monC or monC<..<=eventC
   this.exploreChance = createThresholds(new int[] {this.areaChance, this.monsterChance, this.eventChance});
+ 
   
   if (this.exploreChance[3] != 100) {
     System.out.println("Error: Area chances are invalid.");
   }
   this.monsterList = db.getMonsterList(this.ID);
-  this.monsterWeights = this.createMonsterWeights();
+  this.createMonsterWeights();
   this.monsterWeightThresholds = this.createThresholds(monsterWeights);
+  this.subsequentAreas = db.getAreaList(this.ID);
+  this.createAreaWeights();
+  this.areaWeightThresholds = this.createThresholds(areaWeights);
+
+  // System.out.println("this area ID and explore chance and subsequent area IDs:");
+  // System.out.println(this.ID);
+  // System.out.println(this.exploreChance[0]);
+  // System.out.println(this.exploreChance[1]);
+  // System.out.println(this.exploreChance[2]);
+  // System.out.println(this.exploreChance[3]);
+  // for (int i=0; i < subsequentAreas.size(); i++) {
+  //   List<Object> area = (List<Object>) subsequentAreas.get(i);
+  //   System.out.print(area.get(0));
+  //   System.out.println("hi");
+  // }
 }
+
 
 // getters and setters
 public String getName() {
@@ -53,9 +72,25 @@ public int[] getExploreChance() {
   return this.exploreChance;
 }
 
+public int[] getAreaWeightThresholds (){
+  return this.areaWeightThresholds;
+}
+
+public List<Object> getSubsequentAreas() {
+  return this.subsequentAreas;
+}
+
+public void setSubsequentAreas(List<Object> areaList) {
+  // method used to remove an area from the list and recreate weights and thresholds
+  this.subsequentAreas = areaList;
+  this.createAreaWeights();
+  this.areaWeightThresholds = this.createThresholds(areaWeights);
+}
+
+
 public int[] getMonsterWeightThresholds (){
   return this.monsterWeightThresholds;
-}
+} 
 
 public List<Object> getMonsterList() {
   return this.monsterList;
@@ -63,8 +98,8 @@ public List<Object> getMonsterList() {
 
 
 // other methods
-private int[] createMonsterWeights() {
-  // function to create int[] of monsterweights
+private void createMonsterWeights() {
+  // method to create int[] of monsterweights
   ArrayList<Integer> arrayWeights = new ArrayList<Integer>();
 
   // cycle through each monster
@@ -80,12 +115,31 @@ private int[] createMonsterWeights() {
   }
   }
   // convert ArrayList into an int[]
-  monsterWeights = arrayListToIntList(arrayWeights);
-  return monsterWeights;
+  this.monsterWeights = arrayListToIntList(arrayWeights);
+}
+
+private void createAreaWeights() {
+  // method to create int[] of areaWeights
+  ArrayList<Integer> arrayWeights = new ArrayList<Integer>();
+
+  // cycle through each area
+  for (int i=0; i <= this.subsequentAreas.size()-1; i++) {
+    List<Object> area = (List<Object>) this.subsequentAreas.get(i);
+
+    // check monster weight is a valid integer
+    if (area.get(1) instanceof Integer) {
+      // add each monster weight to arrayWeights
+      arrayWeights.add((Integer) area.get(1));
+  } else {
+      System.out.println("Error: getAreaWeight cast error");
+  }
+  }
+  // convert ArrayList into an int[]
+  this.areaWeights = arrayListToIntList(arrayWeights);
 }
 
 private int[] createThresholds(int[] chances) {
-  // function to take int[] input and output an int[] with 0 at the start and a cumulative total.
+  // method to take int[] input and output an int[] with 0 at the start and a cumulative total.
   // e.g. createThresholds({1, 1, 2, 1, 5}) = {0, 1, 2, 4, 5, 10}
   int[] result = new int[chances.length + 1];
   result[0] = 0;

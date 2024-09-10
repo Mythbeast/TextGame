@@ -10,7 +10,8 @@ public class GameLogic {
   private boolean combat;
   private Monster currentMonster;
 
-  GameLogic(DatabaseManager db, GUI gui) {
+  GameLogic(DatabaseManager db) {
+    this.db = db;
     newGame();
          
     // while (player.getCurrentHP()>0 & monster.getCurrentHP() >0) {
@@ -19,37 +20,101 @@ public class GameLogic {
     
   }
   
-  private void explore() {
+
+  // event handling methods
+  public void onExploreButton() {
     if (!combat) {
       Area area = player.getCurrentArea();
-      explore();
+      explore(area);
+    } else {
+      combatTurn(player, currentMonster);
     }
-    
+  }
 
+  public void onAreaSelect(int index) {
+    // take index and get areaID
+    String areaID = player.getDiscoveredAreaIDs().get(index);
+    System.out.println(areaID);
+
+    // if area is different
+    if (areaID != player.getCurrentAreaID()) {
+      // change current area
+      player.setCurrentArea(areaID);
+      combat = false;
+    }
+  }
+
+  public Player getPlayer() {
+    return this.player;
   }
 
   private void newGame() {
-    Player player = new Player(db);
+    Player player = new Player(db, gui);
     this.player = player;
-    this.gui = gui;
+    
   }
 
+  public void setGUI(GUI gui) {
+    this.gui=gui;
+    this.player.setGUI(gui);
+  }
   private void explore(Area area) {
     // function to decide whether a new area is found, a monster appears or an event occurs
     // adding 1 so that it is between 1 and 100
     int result = rollThresholds(area.getExploreChance());
     switch(result) {
       case 0:
-        System.out.println("area");
+        chooseArea(area, player);
+        break;
+
       case 1: 
         combat = true;
         this.currentMonster = chooseMonster(player.getCurrentArea());
+        break;
         
       case 2:
         System.out.println("event");
+        break;
+    
+      default:
+      // unreachable unless error occurs
+      System.out.println("Error: exploreResultError");
     }
-    // unreachable unless error occurs
-    System.out.println("Error: exploreResultError");
+  }
+
+  private void chooseArea(Area area, Player player) {
+    // function to choose which subsequent area  to encounter
+    List<Object> subsequentAreas = area.getSubsequentAreas();
+    // check to see whether there are any areas left to discover, if not, explore again
+    if (subsequentAreas.size() == 0) {
+      explore(area);
+      return;
+    }
+
+    // roll for which area to discover
+    int areaNumber = rollThresholds(area.getAreaWeightThresholds());
+  
+    // extract area ID    
+    List<Object> areaDetails = (ArrayList<Object>) (subsequentAreas.get(areaNumber));
+    String areaID = (String) areaDetails.get(0);
+
+    // remove area from list to prevent rediscovery
+    subsequentAreas.remove(areaNumber);
+    area.setSubsequentAreas(subsequentAreas);
+
+    // check to see whether area had already been discovered from another location
+    boolean newArea = player.discoverArea(areaID);
+    
+    // if the area was not new to the player, search for a different new area instead
+    if (!newArea) {
+      // find a new area if any exist or explore again
+      chooseArea(area, player);
+      return;
+    }
+    // extract area text and print
+    String areaEncounterText = (String) areaDetails.get(2);
+    gui.discoverArea(db.getAreaName(areaID));
+    System.out.println(areaEncounterText);
   }
 
   private Monster chooseMonster(Area area) {
@@ -65,12 +130,10 @@ public class GameLogic {
     // print encounter text
     System.out.println(monsterEncounterText);
   
-    Monster mon = new Monster(db, monsterID);
-  
+    Monster mon = new Monster(this.db, monsterID);
+      
     // return monster
     return mon;
-    
-    
   }
 
   private int rollThresholds(int[] thresholds) {
@@ -102,14 +165,29 @@ public class GameLogic {
     // calculate randomised damage to be dealt after blocking
     int playerDamage = calcDamage(playerStats, monsterStats[3]);
     int monsterDamage = calcDamage(monsterStats, playerStats[3]);
-    
+
     // change player and monster hp
     player.setCurrentHP(playerStats[1] - monsterDamage);
     monster.setCurrentHP(monsterStats[1] - playerDamage);
+
+    int monsterCurrentHP = monster.getCurrentHP();
+    int playerCurrentHP = player.getCurrentHP();
     
     // output result to GUI
-    gui.damageUpdate("You", monster.getName(), playerDamage, playerStats[4], monster.getCurrentHP());
-    gui.damageUpdate(monster.getName(), "You", monsterDamage, monsterStats[4], player.getCurrentHP());
+    gui.damageUpdate("You", monster.getName(), playerDamage, playerStats[4], monsterCurrentHP);
+    gui.damageUpdate(monster.getName(), "You", monsterDamage, monsterStats[4], playerCurrentHP);
+
+    // check for deaths
+    if (playerCurrentHP == 0) {
+      death();
+    }
+    if (monsterCurrentHP ==0) {
+      combat = false;
+      player.gainGold(monster.gold);
+      player.gainXP(monster.xp);
+      monster.printDeathText();
+
+    }
   }
 
   private int[] critcheck(int[] stats) {
@@ -131,15 +209,26 @@ public class GameLogic {
     double attackerRandomMultiplier = (80 + rand.nextInt(41))/100.0;
     
     // multiply damage by the multiplier
-    double playerDamage = attackerStats[2]*attackerRandomMultiplier;
+    double attackerDamage = attackerStats[2]*attackerRandomMultiplier;
     
     // remove damage due to defence
-    double unblockedPlayerDamage = playerDamage - defenderDefence;
+    double unblockedDamage = attackerDamage - defenderDefence;
     
     // round up and ensure that excess defence does not cause negative damage
-    int finalDamage = Math.max((int)(Math.ceil(unblockedPlayerDamage)), 0);
+    int finalDamage = Math.max((int)(Math.ceil(unblockedDamage)), 0);
+
+    // if crit, damage is minimum of 1
+    if (finalDamage == 0 && attackerStats[6] == 1) {
+      finalDamage = 1;
+    }
     
     return finalDamage;
+  }
+
+  private void death() {
+    System.out.println("You have died.");
+    // save stats
+    // option to replay
   }
 }
 

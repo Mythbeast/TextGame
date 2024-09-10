@@ -62,9 +62,38 @@ String location = "jdbc:sqlite:C:\\Coding Projects\\TextGame\\game.db";
   return errorList;
   }
 
+  public ArrayList<Integer> getPlayerStats(int level) {
+    String sql = "SELECT xpNeeded, maxHP, attack, defence, critChance, critDamage FROM PlayerLevelStats WHERE Level = ?";
+
+  try  (Connection conn = this.connect();
+  PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    // add in level to SQL query
+    pstmt.setInt(1, level);
+    try (ResultSet rs = pstmt.executeQuery()) {
+      ArrayList<Integer> result = new ArrayList<Integer>();
+      
+      if (rs.next()) {
+        result.add(rs.getInt("xpNeeded"));
+        result.add(rs.getInt("maxHP"));
+        result.add(rs.getInt("attack"));
+        result.add(rs.getInt("defence"));
+        result.add(rs.getInt("critChance"));
+        result.add(rs.getInt("critDamage"));                          
+      }
+
+      return result;
+    } 
+    } catch (SQLException e) {
+      System.out.println(e.getMessage());
+    }
+  // unreachable unless error occurs
+  System.out.println("Error: getPlayerStats error");
+  ArrayList<Integer> errorList = new ArrayList<Integer>();
+  return errorList;
+  }
+
   public List<Object> getMonsterInfo(String monsterID) {
     String sql = "SELECT monsterName, level, xp, maxHP, attack, defence, critChance, critDamage, gold, deathText FROM Monster WHERE monsterID = ?";
-    System.out.println(monsterID);
 
   try  (Connection conn = this.connect();
   PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -85,7 +114,6 @@ String location = "jdbc:sqlite:C:\\Coding Projects\\TextGame\\game.db";
         result.add(rs.getInt("gold"));      
         result.add(rs.getString("deathText"));                           
       }
-      System.out.println(result.get(1));
 
       return result;
     } 
@@ -124,7 +152,7 @@ String location = "jdbc:sqlite:C:\\Coding Projects\\TextGame\\game.db";
   }
 
   public List<Object> getMonsterList(String areaID) {
-    String sql = "SELECT monsterID, weight, discoverText FROM MonsterLocations where areaID = ?";
+    String sql = "SELECT monsterID, monsterWeight, discoverText FROM MonsterLocations where areaID = ?";
 
     try  (Connection conn = this.connect();
     PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -136,7 +164,7 @@ String location = "jdbc:sqlite:C:\\Coding Projects\\TextGame\\game.db";
         while (rs.next()) {
           List<Object> monster = new ArrayList<>();
           monster.add(rs.getString("monsterID"));
-          monster.add(rs.getInt("weight"));
+          monster.add(rs.getInt("monsterWeight"));
           monster.add(rs.getString("discoverText"));
           result.add(monster);
         }
@@ -147,7 +175,36 @@ String location = "jdbc:sqlite:C:\\Coding Projects\\TextGame\\game.db";
     }
 
     // unreachable unless error occurs
-    System.out.println("Error: getMonsterInfo error");
+    System.out.println("Error: getMonsterList error");
+    List<Object> errorList = new ArrayList<Object>();
+    return errorList;
+  }
+
+  public List<Object> getAreaList(String areaID) {
+    String sql = "SELECT connectedAreaID, areaWeight, discoverText FROM areaConnections where areaID = ?";
+
+    try  (Connection conn = this.connect();
+    PreparedStatement pstmt = conn.prepareStatement(sql)) {
+      // add in monsterID to SQL query
+      pstmt.setString(1, areaID);
+      try (ResultSet rs = pstmt.executeQuery()) {
+        List<Object> result = new ArrayList<Object>();
+
+        while (rs.next()) {
+          List<Object> area = new ArrayList<>();
+          area.add(rs.getString("connectedAreaID"));
+          area.add(rs.getInt("areaWeight"));
+          area.add(rs.getString("discoverText"));
+          result.add(area);
+        }
+      return result;
+      }
+    } catch (SQLException e) {
+        System.out.println(e.getMessage());
+    }
+
+    // unreachable unless error occurs
+    System.out.println("Error: getAreaList error");
     List<Object> errorList = new ArrayList<Object>();
     return errorList;
   }

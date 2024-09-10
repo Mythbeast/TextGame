@@ -3,12 +3,14 @@ import java.util.*;
 
 
 public class Monster extends CombatEntity{
+  private DatabaseManager db;
   private String name;
   private String deathText;
   private List<HashMap<String,Integer>> drops;
 
 
 Monster(DatabaseManager db, String monsterID) {
+  this.db = db;
   List<Object> monsterInfo = db.getMonsterInfo(monsterID);
   this.name = (String) monsterInfo.get(0);
   this.level = (Integer) monsterInfo.get(1);
@@ -30,6 +32,10 @@ Monster(DatabaseManager db, String monsterID) {
 
 public String getName() {
   return this.name;
+}
+
+public void printDeathText() {
+  System.out.println(this.deathText);
 }
 
 }
