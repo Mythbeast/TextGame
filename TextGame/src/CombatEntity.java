@@ -30,6 +30,14 @@ public void setCurrentHP(int HP) {
   this.currentHP = clamp(HP, 0, this.maxHP);
 }
 
+public void heal(int heal) {
+  this.currentHP = clamp(this.currentHP + heal, 0, this.maxHP);
+}
+
+public int getMaxHP() {
+  return this.maxHP;
+}
+
 public int getAttack() {
   return this.attack;
 }
@@ -42,17 +50,21 @@ public int getGold() {
   return this.gold;
 }
 
-public double getCritChance() {
+public int getCritChance() {
   return this.critChance;
 }
 
-public double getCritDamage() {
+public int getCritDamage() {
   return this.critDamage;
 }
 
 public int[] getCombatStats() {
   int[] stats = {maxHP, currentHP, attack, defence, critChance, critDamage, 0};
   return stats;
+}
+
+public int getXP() {
+  return this.xp;
 }
 
 

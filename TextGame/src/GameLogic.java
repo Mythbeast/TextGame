@@ -1,6 +1,8 @@
 import java.lang.Math;
 import java.util.*;
 
+import javafx.scene.paint.Color;
+
 
 public class GameLogic {
   Random rand = new Random();
@@ -31,16 +33,20 @@ public class GameLogic {
     }
   }
 
+  public void onOptionButton(List<Object> option) {
+    activateEventOption(option);
+  }
+
   public void onAreaSelect(int index) {
     // take index and get areaID
     String areaID = player.getDiscoveredAreaIDs().get(index);
-    System.out.println(areaID);
-
+  
     // if area is different
     if (areaID != player.getCurrentAreaID()) {
       // change current area
       player.setCurrentArea(areaID);
       combat = false;
+      gui.removeMonster();
     }
   }
 
@@ -73,7 +79,7 @@ public class GameLogic {
         break;
         
       case 2:
-        System.out.println("event");
+        chooseEvent(player.getCurrentArea());
         break;
     
       default:
@@ -113,8 +119,8 @@ public class GameLogic {
     }
     // extract area text and print
     String areaEncounterText = (String) areaDetails.get(2);
-    gui.discoverArea(db.getAreaName(areaID));
-    System.out.println(areaEncounterText);
+
+    gui.discoverArea(db.getAreaName(areaID), areaEncounterText);
   }
 
   private Monster chooseMonster(Area area) {
@@ -128,12 +134,93 @@ public class GameLogic {
     String monsterEncounterText = (String) monsterDetails.get(2);
   
     // print encounter text
-    System.out.println(monsterEncounterText);
+    gui.printSpace();
+    gui.print(monsterEncounterText, Color.BLACK, "italic");
   
-    Monster mon = new Monster(this.db, monsterID);
+    Monster mon = new Monster(this.db, this.gui, monsterID);
+    gui.newMonster(mon);
       
     // return monster
     return mon;
+  }
+
+  private void chooseEvent(Area area) {
+    // function to choose which event to encounter
+    // roll for which event
+    int eventNumber = rollThresholds(area.getEventWeightThresholds());
+
+    // extract event ID
+    List<Object> eventInfo = (List<Object>) area.getEventList().get(eventNumber);
+    String eventID = (String) eventInfo.get(0);
+    int repeatable = (int) eventInfo.get(2);
+
+    // check to see whether non repeatable event had already been discovered by the player
+    boolean eventHappens = player.discoverEvent(eventID, repeatable);
+    // if the event can not happen
+    if (!eventHappens) {
+      explore(area);
+      return;
+    }
+    // extract and print event text
+    String eventText = (String) eventInfo.get(3);
+    gui.printSpace();
+    gui.print(eventText, Color.BLACK, "");
+    newEvent(eventID);
+    // Event event = new Event(this.db, this.gui, eventID, eventText);
+  }
+
+  private void newEvent(String eventID) {
+    // each option is {text, cost, reqItemID, heal, goldPerHeal, itemGet, itemLose, equip}
+    List<Object> eventOptions = db.getEventOptions(eventID);
+    int numOptions = eventOptions.size();
+    
+    for (int i = 0; i<= numOptions - 1; i++) {
+      List<Object> option = (List<Object>) eventOptions.get(i);
+      this.gui.newEventOption(i, option);
+    }
+
+  }
+
+  private void activateEventOption(List<Object> option) {
+    // each option is {text, cost, reqItemID, heal, goldPerHeal, itemGet, itemLose, equip}
+    int cost = (int) option.get(1);
+    String reqItemID = (String) option.get(2);
+    String itemLose = (String) option.get(6);
+
+    // check option is possible
+    // TODO: add code for required itemID and itemLose
+    if (this.player.getGold() > cost) {
+      // pay option cost
+      this.player.gainGold(-cost);
+
+      // code for GP based healing
+      int maxHeal = (int) option.get(3);
+      if (maxHeal > 0) {
+        int currentGold = this.player.getGold();
+        int goldPerHeal = (int) option.get(4);
+        int missingHP = this.player.getMaxHP() - this.player.getCurrentHP();
+        int maxCost = missingHP*goldPerHeal;
+
+        // if player has enough money to pay for the maximum heal
+        if (currentGold > maxCost) {
+          player.heal(maxHeal);
+          player.gainGold(-maxCost);
+        } else {
+          // heal as much as can be afforded
+          int heal = currentGold / goldPerHeal;
+          player.heal(heal);
+          player.gainGold(-heal*goldPerHeal);
+        }
+
+      }
+      
+
+
+
+    } else {
+      gui.print("You do not have enough money for that", Color.BLACK, "");
+    }
+    
   }
 
   private int rollThresholds(int[] thresholds) {
@@ -174,18 +261,20 @@ public class GameLogic {
     int playerCurrentHP = player.getCurrentHP();
     
     // output result to GUI
-    gui.damageUpdate("You", monster.getName(), playerDamage, playerStats[4], monsterCurrentHP);
-    gui.damageUpdate(monster.getName(), "You", monsterDamage, monsterStats[4], playerCurrentHP);
-
+    gui.damageUpdate("You", monster.getName(), playerDamage, playerStats[6], monsterCurrentHP);
+    gui.damageUpdate(monster.getName(), "You", monsterDamage, monsterStats[6], playerCurrentHP);
+ 
     // check for deaths
     if (playerCurrentHP == 0) {
       death();
     }
     if (monsterCurrentHP ==0) {
       combat = false;
+      monster.printDeathText();
+      gui.printSpace();
       player.gainGold(monster.gold);
       player.gainXP(monster.xp);
-      monster.printDeathText();
+      gui.removeMonster();
 
     }
   }
@@ -193,8 +282,7 @@ public class GameLogic {
   private int[] critcheck(int[] stats) {
     int roll = rand.nextInt(100);
     roll += 1;
-    if (stats[4] > roll) {
-      System.out.println("Critical hit!");
+    if (stats[4] >= roll) {
       // update critSuccess to 1 
       // TODO: change critSuccess to boolean (requires changing int[])
       stats[6] = 1;
@@ -226,7 +314,8 @@ public class GameLogic {
   }
 
   private void death() {
-    System.out.println("You have died.");
+    gui.printSpace();
+    gui.print("You have died.", Color.BLACK, "bold");
     // save stats
     // option to replay
   }

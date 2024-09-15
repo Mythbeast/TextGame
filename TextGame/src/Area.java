@@ -6,14 +6,15 @@ public class Area {
   private List<Object> info;
   private String ID;
   private String name;
-  // hashmaps contain list of things to find, as well as percentages (integers only)
   private List<Object> subsequentAreas;
   private int[] areaWeights;
   private int[] areaWeightThresholds;
   private List<Object> monsterList;
   private int[] monsterWeights;
   private int[] monsterWeightThresholds;
-  private HashMap<String, Integer>[] itemList;
+  private List<Object> eventList;
+  private int[] eventWeights;
+  private int[] eventWeightThresholds;
   private int areaChance;
   private int monsterChance;
   private int eventChance;
@@ -48,6 +49,9 @@ Area(DatabaseManager db, String areaID) {
   this.subsequentAreas = db.getAreaList(this.ID);
   this.createAreaWeights();
   this.areaWeightThresholds = this.createThresholds(areaWeights);
+  this.eventList = db.getEventList(this.ID);
+  this.createEventWeights();
+  this.eventWeightThresholds = this.createThresholds(eventWeights);
 
   // System.out.println("this area ID and explore chance and subsequent area IDs:");
   // System.out.println(this.ID);
@@ -88,13 +92,25 @@ public void setSubsequentAreas(List<Object> areaList) {
 }
 
 
-public int[] getMonsterWeightThresholds (){
+public int[] getMonsterWeightThresholds() {
   return this.monsterWeightThresholds;
 } 
 
 public List<Object> getMonsterList() {
   return this.monsterList;
 }
+
+public int[] getEventWeightThresholds() {
+  return this.eventWeightThresholds;
+}
+
+public List<Object> getEventList() {
+  return this.eventList;
+}
+
+
+
+
 
 
 // other methods
@@ -136,6 +152,26 @@ private void createAreaWeights() {
   }
   // convert ArrayList into an int[]
   this.areaWeights = arrayListToIntList(arrayWeights);
+}
+
+private void createEventWeights() {
+  // method to create int[] of eventWeights
+  ArrayList<Integer> arrayWeights = new ArrayList<Integer>();
+
+  // cycle through each area
+  for (int i=0; i <= this.eventList.size()-1; i++) {
+    List<Object> event = (List<Object>) this.eventList.get(i);
+
+    // check event weight is a valid integer
+    if (event.get(1) instanceof Integer) {
+      // add each event weight to arrayWeights
+      arrayWeights.add((Integer) event.get(1));
+  } else {
+      System.out.println("Error: getEventWeight cast error");
+  }
+  }
+  // convert ArrayList into an int[]
+  this.eventWeights = arrayListToIntList(arrayWeights);
 }
 
 private int[] createThresholds(int[] chances) {

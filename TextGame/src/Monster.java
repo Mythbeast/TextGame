@@ -1,16 +1,20 @@
 
 import java.util.*;
 
+import javafx.scene.paint.Color;
+
 
 public class Monster extends CombatEntity{
   private DatabaseManager db;
+  private GUI gui;
   private String name;
   private String deathText;
   private List<HashMap<String,Integer>> drops;
 
 
-Monster(DatabaseManager db, String monsterID) {
+Monster(DatabaseManager db, GUI gui, String monsterID) {
   this.db = db;
+  this.gui = gui;
   List<Object> monsterInfo = db.getMonsterInfo(monsterID);
   this.name = (String) monsterInfo.get(0);
   this.level = (Integer) monsterInfo.get(1);
@@ -35,7 +39,7 @@ public String getName() {
 }
 
 public void printDeathText() {
-  System.out.println(this.deathText);
+  gui.print(this.deathText, Color.BLACK, "italic");
 }
 
 }

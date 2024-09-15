@@ -126,6 +126,38 @@ String location = "jdbc:sqlite:C:\\Coding Projects\\TextGame\\game.db";
   return errorList;
   }
 
+  public List<Object> getEventInfo(String eventID) {
+    String sql = "SELECT eventText, numOptions, repeatable, option1, option2, option3, option4, option5 FROM Event WHERE eventID = ?";
+
+  try  (Connection conn = this.connect();
+  PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    // add in monsterID to SQL query
+    pstmt.setString(1, eventID);
+    try (ResultSet rs = pstmt.executeQuery()) {
+      List<Object> result = new ArrayList<Object>();
+      
+      if (rs.next()) {
+        result.add(rs.getString("eventText"));
+        result.add(rs.getInt("numOptions"));
+        result.add(rs.getInt("repeatable"));
+        result.add(rs.getInt("option1"));
+        result.add(rs.getInt("option2"));
+        result.add(rs.getInt("option3"));
+        result.add(rs.getInt("option4"));
+        result.add(rs.getInt("option5"));
+      }
+
+      return result;
+    } 
+    } catch (SQLException e) {
+      System.out.println(e.getMessage());
+    }
+  // unreachable unless error occurs
+  System.out.println("Error: getMonsterInfo error");
+  List<Object> errorList = new ArrayList<Object>();
+  return errorList;
+  }
+
   public String getAreaName(String areaID) {
     String sql = "SELECT areaName FROM Area WHERE areaID = ?";
   
@@ -205,6 +237,103 @@ String location = "jdbc:sqlite:C:\\Coding Projects\\TextGame\\game.db";
 
     // unreachable unless error occurs
     System.out.println("Error: getAreaList error");
+    List<Object> errorList = new ArrayList<Object>();
+    return errorList;
+  }
+
+  public List<Object> getEventList(String areaID) {
+    String sql = "SELECT eventID, eventWeight, repeatable, eventText FROM Event where areaID = ?";
+
+    try  (Connection conn = this.connect();
+    PreparedStatement pstmt = conn.prepareStatement(sql)) {
+      // add in areaID to SQL query
+      pstmt.setString(1, areaID);
+      try (ResultSet rs = pstmt.executeQuery()) {
+        List<Object> result = new ArrayList<Object>();
+
+        while (rs.next()) {
+          List<Object> event = new ArrayList<>();
+          event.add(rs.getString("eventID"));
+          event.add(rs.getInt("eventWeight"));
+          event.add(rs.getInt("repeatable"));
+          event.add(rs.getString("eventText"));
+          result.add(event);
+        }
+      return result;
+      }
+    } catch (SQLException e) {
+        System.out.println(e.getMessage());
+    }
+
+    // unreachable unless error occurs
+    System.out.println("Error: getEventList error");
+    List<Object> errorList = new ArrayList<Object>();
+    return errorList;
+  }
+
+  public List<Object> getEventOptions(String eventID) {
+    String sql = "SELECT optionID FROM EventOptionIndex where eventID = ?";
+    List<Object> optionIDs = new ArrayList<Object>();
+    
+    try  (Connection conn = this.connect();
+    PreparedStatement pstmt = conn.prepareStatement(sql)) {
+      // add in eventID to SQL query to obtain list of optionIDs
+      pstmt.setString(1, eventID);
+      try (ResultSet rs = pstmt.executeQuery()) {
+        // add optionID to list
+        while (rs.next()) {
+          optionIDs.add(rs.getString("optionID"));
+        }
+      }
+      // create list of option details and cycle through optionIDs adding details
+      List<Object> eventOptions = new ArrayList<>();
+      for (int i = 0; i <= optionIDs.size() - 1; i++) {
+        eventOptions.add(getOptionInfo((String) optionIDs.get(i))); 
+      }
+      System.out.println(eventOptions);
+      return eventOptions;
+      
+    
+    } catch (SQLException e) {
+      System.out.println(e.getMessage());
+  }
+
+  // unreachable unless error occurs
+  System.out.println("Error: getEventOptions error");
+  List<Object> errorList = new ArrayList<Object>();
+  return errorList;
+  }
+
+
+
+  private List<Object> getOptionInfo (String optionID) {
+
+    String sql2 = "SELECT optionText, goldCost, reqItemID, heal, goldPerHeal, itemGet, itemLose, equip FROM EventOptions where optionID = ?";
+
+    try  (Connection conn = this.connect();
+    PreparedStatement pstmt = conn.prepareStatement(sql2)) {
+      // add in monsterID to SQL query
+      pstmt.setString(1, optionID);
+      try (ResultSet rs = pstmt.executeQuery()) {
+        List<Object> option = new ArrayList<>();
+        while (rs.next()) {
+          option.add(rs.getString("optionText"));
+          option.add(rs.getInt("goldCost"));
+          option.add(rs.getString("reqItemID"));
+          option.add(rs.getInt("heal"));
+          option.add(rs.getInt("goldPerHeal"));
+          option.add(rs.getString("itemGet"));
+          option.add(rs.getString("itemLose"));
+          option.add(rs.getString("equip"));
+        }
+      return option;
+      }
+    } catch (SQLException e) {
+        System.out.println(e.getMessage());
+    }
+
+    // unreachable unless error occurs
+    System.out.println("Error: getOptionInfo error");
     List<Object> errorList = new ArrayList<Object>();
     return errorList;
   }

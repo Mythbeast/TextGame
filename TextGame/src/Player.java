@@ -10,6 +10,8 @@ public class Player extends CombatEntity{
   private GUI gui;
     
   // ArrayLists used as size is mutable
+  // variable used to hold discovered non repeatable events
+  private ArrayList<String> discoveredEventIDs;
   // variable used to hold areaIDs for discover checks and quick indexing
   private ArrayList<String> discoveredAreaIDs;
   // variable used to hold entire Areas to avoid recreating each time
@@ -38,7 +40,8 @@ public class Player extends CombatEntity{
     this.gold = 500;
     loadStats(this.level);
     this.currentHP = this.maxHP;
-    System.out.println(xpForNextLevel);
+
+    this.discoveredEventIDs = new ArrayList<String>();
 
 
     this.discoveredAreaNames = new ArrayList<String>();
@@ -84,6 +87,10 @@ public class Player extends CombatEntity{
     this.gold += amount;
   }
 
+  public int getXPForNextLevel() {
+    return this.xpForNextLevel;
+  }
+
   public void gainXP(int amount) {
     this.xp += amount;
     if (this.xp >= this.xpForNextLevel) {
@@ -106,7 +113,7 @@ public class Player extends CombatEntity{
     this.level += 1;
     loadStats(this.level);
     this.currentHP = this.maxHP;
-    gui.levelUp(this.level);
+    gui.levelUp(this.level, this.maxHP);
   }
 
   public boolean discoverArea(String areaID) {
@@ -122,8 +129,21 @@ public class Player extends CombatEntity{
       this.discoveredAreaNames.add(area.getName());
       return true;
     }
-    
+  }
 
+  public boolean discoverEvent(String eventID, int repeatable) {
+    // if event is not repeatable and has already been discovered, return false
+    if (discoveredEventIDs.contains(eventID)) {
+      return false;
+    }
+    
+    else {
+      if (repeatable == 0) {
+        discoveredEventIDs.add(eventID);
+      }
+      return true;
+
+    }
   }
 
   
