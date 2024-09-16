@@ -3,12 +3,14 @@ import java.util.*;
 public class Equipment extends AttackStats{
   private DatabaseManager db;
   private String name;
+  private String ID;
   private String type;
   private int HP;
   private  HashMap<String, Integer> combatStats;
 
   Equipment(DatabaseManager db, String equipmentID) {
     this.db = db;
+    this.ID = equipmentID;
     // equipmentInfo = {name, type, HP, attack, defence, critChance, critDamage}
     List<Object> stats = db.getEquipmentInfo(equipmentID);
     this.name = (String) stats.get(0);
@@ -39,6 +41,10 @@ public class Equipment extends AttackStats{
     }
   }
 
+  public String getID() {
+    return this.ID;
+  }
+
   public String getName() {
     return this.name;
   }
@@ -54,5 +60,25 @@ public class Equipment extends AttackStats{
   public HashMap<String, Integer> getCombatStats() {
     return this.combatStats;
   }
+
+  // override the .equals() method to be able to compare equipment with .contains()
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || this.getClass() != o.getClass()) return false;
+        Equipment that = (Equipment) o;
+        return Objects.equals(this.ID, that.ID) && Objects.equals(name, that.name);
+  }
+
+  // Override hashCode to maintain consistency with equals
+  @Override
+  public int hashCode() {
+    return Objects.hash(name, ID);
+  }
+
+  @Override
+    public String toString() {
+        return "Equipment{name='" + name + "', ID=" + ID + "}";
+    }
   
 }

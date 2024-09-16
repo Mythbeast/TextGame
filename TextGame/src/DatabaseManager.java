@@ -332,24 +332,25 @@ String location = "jdbc:sqlite:C:\\Coding Projects\\TextGame\\game.db";
 
   public boolean keyItemCheck (String itemID) {
 
-    String sql = "SELECT COUNT(1) FROM KeyItems where keyItemID = ?";
+    String sql = "SELECT keyIndicator FROM ItemIndex where itemID = ?";
 
     try  (Connection conn = this.connect();
     PreparedStatement pstmt = conn.prepareStatement(sql)) {
       // add in itemID to SQL query
       pstmt.setString(1, itemID);
       try (ResultSet rs = pstmt.executeQuery()) {
-        int result = 0;
         if (rs.next()) {
-          result = rs.getInt(1);
-        }
-
-        switch(result) {
-          case 1:
-            return true;
-          default:
-            return false;
-        }
+          int result = rs.getInt(1);
+          switch(result) {
+            case 1:
+              return true;
+            default:
+              return false;
+          }
+        } else {
+          System.out.println("Error: keyItemCheck error with itemID " + itemID);
+          return false;
+        }      
       }
     } catch (SQLException e) {
       System.out.println(e.getMessage());

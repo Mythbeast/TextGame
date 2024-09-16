@@ -10,7 +10,9 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.geometry.HPos;
 import javafx.geometry.Insets;
+import javafx.geometry.VPos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -85,21 +87,30 @@ public class GUI extends Application{
 
   // event UI variables
   private GridPane eventUI;
-  // private Button option1;
-  // private Button option2;
-  // private Button option3;
-  // private Button option4;
-  // private Button option5;
+
+  // menu UI variables
+  private GridPane menuUI;
+  private Label menuInfoText;
+  private GridPane subMenu;
+  private GridPane backpackMenu; 
+  private GridPane backpackButtonBox;
+  private ScrollPane scrollableBackpack;
+  private Equipment activeBackpackEquipment;
 
   int WINDOWWIDTH = 1000;
   int WINDOWHEIGHT = 1000;
-  int TEXTBOXWIDTH = 600;
-  int TEXTBOXHEIGHT = 400;
+  int MAINTEXTBOXWIDTH = 600;
+  int MAINTEXTBOXHEIGHT = 400;
   int PLAYERHPWIDTH = 900;
   int PLAYERHPHEIGHT = 30;
   int MONHPWIDTH = 100;
   int MONHPHEIGHT = 30;
   int HPCURVE = 15;
+  int MENUINFOWIDTH = 500;
+  int MENUINFOHEIGHT = 30;
+  int BACKPACKWIDTH = 900;
+  int BACKPACKHEIGHT = 250;
+  int BACKPACKCOLS = 6;
 
   public static void setGameLogic(GameLogic game) {
     game1 = game;
@@ -123,7 +134,7 @@ public class GUI extends Application{
 
     // Text box creation
     this.textBox = new TextFlow();
-    textBox.setPrefSize(TEXTBOXWIDTH, TEXTBOXHEIGHT);
+    textBox.setPrefSize(MAINTEXTBOXWIDTH, MAINTEXTBOXHEIGHT);
     textBox.setStyle("-fx-border-color: black; -fx-border-width: 2px;");    
     // textBox.setLineSpacing(-2.0);
 
@@ -202,6 +213,7 @@ public class GUI extends Application{
     this.playerUI.setVgap(10);
 
     GridPane playerStats = new GridPane();
+    Label playerStatsTitleLabel = new Label("Player Stats:");
     SimpleBindingIntegerLabel playerAttackLabel = new SimpleBindingIntegerLabel("Attack: ", this.playerAttack, "");
     SimpleBindingIntegerLabel playerDefenceLabel = new SimpleBindingIntegerLabel("Defence: ", this.playerDefence, "");
     SimpleBindingIntegerLabel playerCritChanceLabel = new SimpleBindingIntegerLabel("Crit Chance: ", this.playerCritChance, "");
@@ -224,15 +236,30 @@ public class GUI extends Application{
     };
     playerXPLabel.textProperty().bind(playerXPBinding);
     
-    
-    playerStats.add(playerAttackLabel, 0, 0);
-    playerStats.add(playerDefenceLabel, 0, 1);
-    playerStats.add(playerCritChanceLabel, 0, 2);
-    playerStats.add(playerCritDamageLabel, 0, 3);
-    playerStats.add(playerXPLabel, 0, 4);
-    playerStats.add(playerGoldLabel, 0, 5);
+    playerStats.add(playerStatsTitleLabel, 0, 0);
+    playerStats.add(playerAttackLabel, 0, 1);
+    playerStats.add(playerDefenceLabel, 0, 2);
+    playerStats.add(playerCritChanceLabel, 0, 3);
+    playerStats.add(playerCritDamageLabel, 0, 4);
+    playerStats.add(playerXPLabel, 0, 5);
+    playerStats.add(playerGoldLabel, 0, 6);
 
-    playerItemStats = new GridPane();
+    playerItemStats = new GridPane();       
+    Label itemStatsTitleLabel = new Label("Item Stats:");
+    SimpleBindingIntegerLabel playerItemAttackLabel = new SimpleBindingIntegerLabel("(", this.playerItemAttack, ")");
+    SimpleBindingIntegerLabel playerItemDefenceLabel = new SimpleBindingIntegerLabel("(", this.playerItemDefence, ")");
+    SimpleBindingIntegerLabel playerItemCritChanceLabel = new SimpleBindingIntegerLabel("(", this.playerItemCritChance, ")");
+    SimpleBindingIntegerLabel playerItemCritDamageLabel = new SimpleBindingIntegerLabel("(", this.playerItemCritDamage, ")");
+
+    this.playerItemStats.add(itemStatsTitleLabel, 0, 0);
+    this.playerItemStats.add(playerItemAttackLabel, 0, 1);
+    this.playerItemStats.add(playerItemDefenceLabel, 0,2);
+    this.playerItemStats.add(playerItemCritChanceLabel, 0,3);
+    this.playerItemStats.add(playerItemCritDamageLabel, 0,4);
+    for (int row = 0; row < 5; row++) {
+      GridPane.setHalignment(this.playerItemStats.getChildren().get(row), HPos.CENTER);
+    }
+
 
     GridPane playerEquipment = new GridPane();
     SimpleBindingStringLabel playerWeaponLabel = new SimpleBindingStringLabel("Weapon: ", this.playerWeapon, "");
@@ -251,6 +278,8 @@ public class GUI extends Application{
     this.playerUI.add(playerStats, 0, 0);
     this.playerUI.add(playerEquipment, 0, 1);
     this.playerUI.add(playerItemStats, 1, 0);
+
+   
 
 
     
@@ -292,6 +321,63 @@ public class GUI extends Application{
     this.eventUI.setStyle("-fx-border-color: black; -fx-border-width: 2px;");
     this.eventUI.setHgap(10);
     this.eventUI.setVgap(10);
+    
+
+    // menu UI Section---------------------------------------------------------
+    this.menuUI = new GridPane();
+    this.menuUI.setStyle("-fx-border-color: black; -fx-border-width: 2px;");
+    this.menuUI.setHgap(10);
+    this.menuUI.setVgap(10);
+    this.menuUI.setPadding(new Insets(10,10,10,10));
+
+    Button keyItemsButton = new Button("Key Items");
+    Button backpackButton = new Button("Backpack");
+    this.menuInfoText = new Label("");
+    this.menuInfoText.setStyle("-fx-border-color: black; -fx-border-width: 2px;"); 
+    this.menuInfoText.setPrefWidth(MENUINFOWIDTH);
+    this.menuInfoText.setPrefHeight(MENUINFOHEIGHT);
+    this.menuInfoText.setPadding(new Insets(10,10,10,10));
+
+    this.subMenu = new GridPane();
+    // GridPane creation for sub menu
+    this.backpackMenu = new GridPane();
+    Button equipButton = new Button("Equip");
+    equipButton.setOnAction(event -> {
+      this.player.equip(activeBackpackEquipment, activeBackpackEquipment.getType());
+      newEquip(activeBackpackEquipment, activeBackpackEquipment.getType());
+      removeFromBackpack(activeBackpackEquipment);
+    });
+    backpackMenu.add(equipButton, 0, 0);
+
+    // GridPane creation for backpack
+    this.backpackButtonBox = new GridPane();
+    this.backpackButtonBox.setPrefSize(BACKPACKWIDTH, BACKPACKHEIGHT);
+    this.backpackButtonBox.setStyle("-fx-border-color: black; -fx-border-width: 2px;");    
+    this.backpackButtonBox.setVgap(10);
+    this.backpackButtonBox.setHgap(10);
+
+    // create ScrollPane to ensure scrolling of text in textBox
+    this.scrollableBackpack = new ScrollPane(this.backpackButtonBox);
+    scrollableBackpack.setFitToWidth(true);
+    scrollableBackpack.vvalueProperty().bind(backpackButtonBox.heightProperty());
+    scrollableBackpack.setHbarPolicy(ScrollBarPolicy.NEVER);
+    ArrayList<Equipment> backpack = player.getBackpack();
+
+    this.menuUI.add(backpackButton, 0, 0);
+    this.menuUI.add(keyItemsButton, 1, 0);
+    this.menuUI.add(menuInfoText, 5, 0);
+    
+
+    this.menuUI.add(subMenu, 0, 1);
+    this.menuUI.setColumnSpan(subMenu, 11);
+
+    backpackButton.setOnAction(event -> {
+      this.subMenu.getChildren().clear();
+      this.subMenu.add(backpackMenu, 0, 0);
+      this.subMenu.add(scrollableBackpack, 0, 1);
+    });
+
+
 
     // add items to window to row a col b
     root.add(areaSelect, 1, 4);
@@ -313,6 +399,8 @@ public class GUI extends Application{
     root.setColumnSpan(monsterUI, 3);
     root.add(eventUI, 0, 10);
     root.setColumnSpan(eventUI, 11);
+    root.add(menuUI, 0, 15);
+    root.setColumnSpan(menuUI, 11);
 
    
     // set the scene and show the window
@@ -409,7 +497,6 @@ public class GUI extends Application{
     this.playerCurrentHPVisible.set(player.getCurrentHP());
     double playerHPPercent = (double) this.playerCurrentHPVisible.get()/ this.playerMaxHPVisible.get(); 
     this.playerHPBar.setWidth(PLAYERHPWIDTH*playerHPPercent);
-    System.out.println(this.playerCurrentHPVisible);
   }
 
   public void levelUp(int level, int newMaxHP) {
@@ -426,17 +513,13 @@ public class GUI extends Application{
     this.xpForNextLevel.set(this.player.getXPForNextLevel());
   }
 
-  public void newEquipment(Equipment equipment, String type) {
+  public void newEquip(Equipment equipment, String type) {
     // get key details
     String name = equipment.getName();
     HashMap<String, Integer> combatStats = equipment.getCombatStats();
     String statString = statString(combatStats);
 
-    // output equipment info to TextFlow
-    printSpace();
-    print("You have found a " + name, Color.BLACK, "");
-    print(statString, Color.BLACK, "");
-
+    // update correct item type stats
     switch (type) {
       case "weapon1":
         this.playerWeapon.set(name + " (" + statString + ")");
@@ -464,9 +547,19 @@ public class GUI extends Application{
     ItemStatUpdate();
   }
 
+  public void discoverItem(Equipment equipment) {
+    // output equipment info to TextFlow
+    String name = equipment.getName();   
+    HashMap<String, Integer> combatStats = equipment.getCombatStats();
+    String statString = statString(combatStats); 
+    printSpace();
+    print("You have found a " + name, Color.BLACK, "");
+    print(statString, Color.BLACK, "");
+  }
+
   public void ItemStatUpdate() {
     // clear previous itemStat Labels
-    playerItemStats.getChildren().clear();
+    // playerItemStats.getChildren().clear();
 
     // add new labels
     HashMap<String, Integer> itemStats = this.player.getItemStats();
@@ -481,34 +574,59 @@ public class GUI extends Application{
           break;
         case "Attack: ":
           this.playerItemAttack.set(entry.getValue());
-          if (this.playerItemAttack.get() != 0) {
-            SimpleBindingIntegerLabel playerItemAttackLabel = new SimpleBindingIntegerLabel("(", this.playerItemAttack, ")");
-            this.playerItemStats.add(playerItemAttackLabel, 0,1);
-          }
           break;
-          case "Defence: ":
+        case "Defence: ":
           this.playerItemDefence.set(entry.getValue());
-          if (this.playerItemDefence.get() != 0) {
-            SimpleBindingIntegerLabel playerItemDefenceLabel = new SimpleBindingIntegerLabel("(", this.playerItemDefence, ")");
-            this.playerItemStats.add(playerItemDefenceLabel, 0,2);
-          }
           break;
-          case "Crit Chance: ":
+        case "Crit Chance: ":
           this.playerItemCritChance.set(entry.getValue());
-          if (this.playerItemCritChance.get() != 0) {
-            SimpleBindingIntegerLabel playerItemCritChanceLabel = new SimpleBindingIntegerLabel("(", this.playerItemDefence, ")");
-            this.playerItemStats.add(playerItemCritChanceLabel, 0,3);
-          }
           break;
-          case "Crit Damage: ":
+        case "Crit Damage: ":
           this.playerItemCritDamage.set(entry.getValue());
-          if (this.playerItemCritDamage.get() != 0) {
-            SimpleBindingIntegerLabel playerItemCritDamageLabel = new SimpleBindingIntegerLabel("(", this.playerItemCritDamage, ")");
-            this.playerItemStats.add(playerItemCritDamageLabel, 0,4);
-          }
           break;
       }
     }
+  }
+
+  private void clearEmptyItemStats() {
+    for (var node: this.playerItemStats.getChildren()) {
+      if (node instanceof SimpleBindingIntegerLabel) {
+        SimpleBindingIntegerLabel label = (SimpleBindingIntegerLabel) node;
+        label.setText("-");
+      }
+    }
+  }
+
+  public void addToBackpack(Equipment equipment) {
+    Button button = new Button(equipment.getName());
+    button.setOnAction(event -> {
+      this.activeBackpackEquipment = equipment;
+      this.menuInfoText.setText(statString(equipment.getCombatStats()));
+    });
+    int backpackSize = backpackButtonBox.getChildren().size();
+    int col =  backpackSize / BACKPACKCOLS;
+    int row = backpackSize % BACKPACKCOLS;
+    backpackButtonBox.add(button, row, col);
+  }
+
+  private void removeFromBackpack(Equipment equipment) {
+    // variables used to prevent concurrentModificationException
+    int row = -1;
+    int col = -1;
+
+    // loop through buttons to identify which Button to delete
+    for (var node : backpackButtonBox.getChildren()) {
+      if (((Button)node).getText().equals(equipment.getName())) {
+        row = backpackButtonBox.getRowIndex(node);
+        col = backpackButtonBox.getColumnIndex(node);
+      }
+    }    
+    // variables used as removeIf requires final variables
+    int colFinal = col;
+    int rowFinal = row;
+    
+    // delete the button from the backpackButtonBox
+    backpackButtonBox.getChildren().removeIf(node -> GridPane.getColumnIndex(node) == colFinal && GridPane.getRowIndex(node) == rowFinal);
   }
 
   private String statString(HashMap<String, Integer> combatStats) {
@@ -570,9 +688,9 @@ public class GUI extends Application{
     this.currentXP.set(player.getXP());
     this.playerGold.set(player.getGold());
     monsterName.textProperty().bind(stringToStringProperty("Monster: "));
-    monsterUI.getChildren().removeIf( node -> GridPane.getColumnIndex(node) == 0 && GridPane.getRowIndex(node) == 1);
-    monsterUI.getChildren().removeIf( node -> GridPane.getColumnIndex(node) == 1 && GridPane.getRowIndex(node) == 1);
-    monsterUI.getChildren().removeIf( node -> GridPane.getColumnIndex(node) == 0 && GridPane.getRowIndex(node) == 2);
+    monsterUI.getChildren().removeIf(node -> GridPane.getColumnIndex(node) == 0 && GridPane.getRowIndex(node) == 1);
+    monsterUI.getChildren().removeIf(node -> GridPane.getColumnIndex(node) == 1 && GridPane.getRowIndex(node) == 1);
+    monsterUI.getChildren().removeIf(node -> GridPane.getColumnIndex(node) == 0 && GridPane.getRowIndex(node) == 2);
   }
 
   private void setMonsterStats(Monster mon) {
@@ -619,6 +737,22 @@ public class GUI extends Application{
       game1.onOptionButton(option);
     });
     eventUI.add(optionButton, i, 0);
+  }
+
+  public void addBooleanChoice() {
+    removeEvent();
+    Button yesButton = new Button("Yes");
+    yesButton.setOnAction(event -> {
+      game1.onEquipBoolean(true);
+    });
+    Button noButton = new Button("No");
+    noButton.setOnAction(event -> {
+      game1.onEquipBoolean(false);
+    });
+    eventUI.add(yesButton, 0, 0);
+    eventUI.add(noButton, 1, 0);
+
+
   }
 
   private IntegerProperty intToIntegerProperty(int value) {

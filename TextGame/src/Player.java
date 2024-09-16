@@ -27,6 +27,7 @@ public class Player extends CombatEntity{
   // equipment is {Weapon, Shield, ...}
   private ArrayList<Equipment> equipmentList;
     // itemStats are HP, attack, defence, critChance and critDamage 
+  private ArrayList<Equipment> backpack;
   
   private HashMap<String, Integer> itemStats;
 
@@ -43,7 +44,13 @@ public class Player extends CombatEntity{
     loadPlayerStats(this.level);
     this.currentHP = this.maxHP;
     this.equipmentList = new ArrayList();
+    this.backpack = new ArrayList<>();
     this.itemStats = new HashMap<>();
+    this.itemStats.put("HP: ", 0);
+    this.itemStats.put("Attack: ", 0);
+    this.itemStats.put("Defence: ", 0);
+    this.itemStats.put("Crit Chance: ", 0);
+    this.itemStats.put("Crit Damage: ", 0);
 
     this.discoveredEventIDs = new ArrayList<String>();
 
@@ -117,8 +124,28 @@ public class Player extends CombatEntity{
     }
   }
 
+  public ArrayList<Equipment> getBackpack() {
+    return this.backpack;
+  }
+
+  public void addToBackpack(Equipment equipment) {
+    // if equipment already in backpack, do nothing, otherwise add and update UI
+    if (this.backpack.contains(equipment) || this.equipmentList.contains(equipment)) {
+      return;
+    } else {
+      this.backpack.add(equipment);
+      gui.addToBackpack(equipment);
+    }
+  }
+
   public void equip(Equipment equipment, String type) {
     // TODO: condense terrible duplicated code
+
+    // if item was in backpack, remove it
+    if (this.backpack.contains(equipment)) {
+      backpack.remove(equipment);
+    }
+
     // messy code due to the size of equipmentList changing when an item is removed
     // if 2Handed weapon - iterate through equipmentList and check for weapons and shields
     if (type.equals("weapon2")) {
@@ -147,10 +174,10 @@ public class Player extends CombatEntity{
       int higherIndex = Math.max(oldWeaponIndex, oldShieldIndex);
       int lowerIndex = Math.min(oldWeaponIndex, oldShieldIndex);
       if (higherIndex >= 0) {
-        equipmentList.remove(higherIndex);
+        unequip(this.equipmentList.get(higherIndex), higherIndex);
       }
       if (lowerIndex >= 0) {
-        equipmentList.remove(lowerIndex);
+        unequip(this.equipmentList.get(lowerIndex), lowerIndex);
       }         
     } else{
       // for all non 2H weapon, find index of old equipment and remove
@@ -160,7 +187,7 @@ public class Player extends CombatEntity{
           Equipment oldEquipment = equipmentList.get(i);
           HashMap<String, Integer> oldStats = oldEquipment.getCombatStats();
           this.itemStats = hashMapSubtract(this.itemStats, oldStats);
-          equipmentList.remove(i);
+          unequip(oldEquipment, i);
           break;        
         }
         // case where player has a 2H weapon and wants to swap it for a shield
@@ -170,18 +197,19 @@ public class Player extends CombatEntity{
             Equipment oldEquipment = equipmentList.get(i);
             HashMap<String, Integer> oldStats = oldEquipment.getCombatStats();
             this.itemStats = hashMapSubtract(this.itemStats, oldStats);
-            equipmentList.remove(i);
+            unequip(oldEquipment, i);
           }
         }
       }
     }
     this.equipmentList.add(equipment);
-    this.itemStats = hashMapAdd(equipment.getCombatStats(), this.itemStats);    
+    this.itemStats = hashMapAdd(this.itemStats, equipment.getCombatStats());    
   }
 
-  
-
-
+  private void unequip(Equipment equipment, int index) {
+    this.equipmentList.remove(index);
+    addToBackpack(equipment);
+  }
 
   private void loadPlayerStats(int level) {
     // stats are {xpNeeded, maxHP, attack, defence, critChance, critDamage}

@@ -11,6 +11,10 @@ public class SimpleBindingIntegerLabel extends Label{
         }
         @Override
         protected String computeValue() {
+          // special case for ItemStatLabels where no stat is added
+          if (variable.get() == 0 && string2.equals(")")) {
+            return "-";
+          }
           return string1 + variable.get() + string2;
         }
       });

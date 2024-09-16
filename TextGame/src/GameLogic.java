@@ -11,6 +11,8 @@ public class GameLogic {
   private Player player;
   private boolean combat;
   private Monster currentMonster;
+  private Equipment pendingEquipment;
+  private String pendingEquipmentType;
 
   GameLogic(DatabaseManager db) {
     this.db = db;
@@ -50,6 +52,16 @@ public class GameLogic {
       gui.removeMonster();
       gui.removeEvent();
     }
+  }
+
+  public void onEquipBoolean(Boolean bool){
+    if (bool) {
+      equip(this.pendingEquipment);
+    } else {
+      this.player.addToBackpack(pendingEquipment);
+    }
+    gui.removeEvent();
+    
   }
 
   public Player getPlayer() {
@@ -176,7 +188,7 @@ public class GameLogic {
     List<Object> eventOptions = db.getEventOptions(eventID);
     int numOptions = eventOptions.size();
 
-    gui.print("Your choices: ", Color.BLACK, "");
+    gui.print("\n Your choices: ", Color.BLACK, "");
     
     for (int i = 0; i<= numOptions - 1; i++) {
       List<Object> option = (List<Object>) eventOptions.get(i);
@@ -196,6 +208,8 @@ public class GameLogic {
     // check option is possible
     // TODO: add code for required itemID and itemLose
     if (this.player.getGold() >= cost) {
+      // if option is chosen and valid, remove options from GUI
+      gui.removeEvent();
       // pay option cost
       this.player.gainGold(-cost);
 
@@ -220,6 +234,7 @@ public class GameLogic {
         // update HP
         gui.playerCurrentHPUpdate();
       }
+      
 
       // manage item changes
       // TODO: create code for lose item
@@ -235,7 +250,7 @@ public class GameLogic {
         // TODO: add forceEquip code
       }
       gui.playerGoldUpdate();
-      gui.removeEvent();
+      
       
     } else {
       gui.print("You do not have enough money for that", Color.BLACK, "");
@@ -247,13 +262,26 @@ public class GameLogic {
     if (keyItem) {
 
     } else {
-      Equipment equipment = new Equipment(db, itemID);
-      String type = equipment.getType();
-      player.equip(equipment, type);
-
-      // add weapon to player UI
-      gui.newEquipment(equipment, type);          
+      this.pendingEquipment = new Equipment(db, itemID);
+      pendingEquipmentType = this.pendingEquipment.getType();
+      String name = this.pendingEquipment.getName();
+      equipCheck(name);
     }
+  }
+
+  private void equipCheck(String name) {
+    // TODO: add check for item already in backpack / equipped and GUI print different message
+    gui.discoverItem(this.pendingEquipment);
+    gui.print("Would you like to equip " + name + "?", Color.BLACK, "");
+        gui.addBooleanChoice();
+  }
+
+  private void equip(Equipment equipment) {
+    // add equipment to player
+    player.equip(this.pendingEquipment, this.pendingEquipmentType);
+
+    // add equipment to player GUI
+    gui.newEquip(this.pendingEquipment, this.pendingEquipmentType);
   }
   
   
