@@ -15,6 +15,7 @@ public class GameLogic {
   GameLogic(DatabaseManager db) {
     this.db = db;
     newGame();
+    
          
     // while (player.getCurrentHP()>0 & monster.getCurrentHP() >0) {
     //   combatTurn(player, monster);
@@ -47,6 +48,7 @@ public class GameLogic {
       player.setCurrentArea(areaID);
       combat = false;
       gui.removeMonster();
+      gui.removeEvent();
     }
   }
 
@@ -170,18 +172,22 @@ public class GameLogic {
   }
 
   private void newEvent(String eventID) {
-    // each option is {text, cost, reqItemID, heal, goldPerHeal, itemGet, itemLose, equip}
+    // each option is {text, cost, reqItemID, heal, goldPerHeal, itemGet, itemLose, equip, eventText}
     List<Object> eventOptions = db.getEventOptions(eventID);
     int numOptions = eventOptions.size();
+
+    gui.print("Your choices: ", Color.BLACK, "");
     
     for (int i = 0; i<= numOptions - 1; i++) {
       List<Object> option = (List<Object>) eventOptions.get(i);
+      gui.print((String) option.get(8), Color.BLACK, "");
       this.gui.newEventOption(i, option);
     }
 
   }
 
   private void activateEventOption(List<Object> option) {
+    // TODO: does equip need to be an option?
     // each option is {text, cost, reqItemID, heal, goldPerHeal, itemGet, itemLose, equip}
     int cost = (int) option.get(1);
     String reqItemID = (String) option.get(2);
@@ -189,7 +195,7 @@ public class GameLogic {
 
     // check option is possible
     // TODO: add code for required itemID and itemLose
-    if (this.player.getGold() > cost) {
+    if (this.player.getGold() >= cost) {
       // pay option cost
       this.player.gainGold(-cost);
 
@@ -202,7 +208,7 @@ public class GameLogic {
         int maxCost = missingHP*goldPerHeal;
 
         // if player has enough money to pay for the maximum heal
-        if (currentGold > maxCost) {
+        if (currentGold >= maxCost) {
           player.heal(maxHeal);
           player.gainGold(-maxCost);
         } else {
@@ -211,18 +217,46 @@ public class GameLogic {
           player.heal(heal);
           player.gainGold(-heal*goldPerHeal);
         }
-
+        // update HP
+        gui.playerCurrentHPUpdate();
       }
+
+      // manage item changes
+      // TODO: create code for lose item
+      // this.player.loseItem(itemLose);
+
+      // if new item is obtained
+      if (option.get(5) != null){
+        findItem((String) option.get(5));
+      }
+
+      // if player is forced to equip something
+      if ((String) option.get(7) != null) {
+        // TODO: add forceEquip code
+      }
+      gui.playerGoldUpdate();
+      gui.removeEvent();
       
-
-
-
     } else {
       gui.print("You do not have enough money for that", Color.BLACK, "");
     }
-    
   }
 
+  private void findItem(String itemID) {
+    boolean keyItem = db.keyItemCheck(itemID);
+    if (keyItem) {
+
+    } else {
+      Equipment equipment = new Equipment(db, itemID);
+      String type = equipment.getType();
+      player.equip(equipment, type);
+
+      // add weapon to player UI
+      gui.newEquipment(equipment, type);          
+    }
+  }
+  
+  
   private int rollThresholds(int[] thresholds) {
     int size = thresholds.length;
     // identify maximum roll

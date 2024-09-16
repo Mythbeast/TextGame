@@ -52,18 +52,6 @@ Area(DatabaseManager db, String areaID) {
   this.eventList = db.getEventList(this.ID);
   this.createEventWeights();
   this.eventWeightThresholds = this.createThresholds(eventWeights);
-
-  // System.out.println("this area ID and explore chance and subsequent area IDs:");
-  // System.out.println(this.ID);
-  // System.out.println(this.exploreChance[0]);
-  // System.out.println(this.exploreChance[1]);
-  // System.out.println(this.exploreChance[2]);
-  // System.out.println(this.exploreChance[3]);
-  // for (int i=0; i < subsequentAreas.size(); i++) {
-  //   List<Object> area = (List<Object>) subsequentAreas.get(i);
-  //   System.out.print(area.get(0));
-  //   System.out.println("hi");
-  // }
 }
 
 

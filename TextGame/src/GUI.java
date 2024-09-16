@@ -1,31 +1,33 @@
 
 
-import javafx.animation.Interpolatable;
+import java.util.*;
+
 import javafx.application.Application;
-import javafx.geometry.Insets;
-import javafx.beans.Observable;
 import javafx.beans.binding.StringBinding;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import javafx.beans.value.ObservableIntegerValue;
-import javafx.beans.value.ObservableStringValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.ScrollPane.ScrollBarPolicy;
+import javafx.scene.layout.GridPane;
 // import javafx.event.ActionEvent;
 // import javafx.event.EventHandler;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.control.*;
-import javafx.scene.control.ScrollPane.ScrollBarPolicy;
-import javafx.scene.layout.*;
-import javafx.scene.text.*;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
-import java.util.*;
 
 public class GUI extends Application{
   private static GameLogic game1;
@@ -39,6 +41,7 @@ public class GUI extends Application{
  
   // player UI variables
   private GridPane playerUI;
+
   private IntegerProperty playerAttack;
   private IntegerProperty playerDefence;
   private IntegerProperty playerCritChance;
@@ -52,6 +55,19 @@ public class GUI extends Application{
   private Rectangle playerHPBar;
   private IntegerProperty playerCurrentHPVisible;
   private IntegerProperty playerMaxHPVisible;
+  // equipment variables
+  private StringProperty playerWeapon = stringToStringProperty("");;
+  private StringProperty playerShield = stringToStringProperty("");;
+  private StringProperty playerArmour = stringToStringProperty("");;
+  private StringProperty playerBoots = stringToStringProperty("");;
+  private StringProperty playerHelmet = stringToStringProperty("");;
+  private StringProperty playerRing = stringToStringProperty("");;
+  private GridPane playerItemStats;
+  private IntegerProperty playerItemHP = intToIntegerProperty(0);
+  private IntegerProperty playerItemAttack = intToIntegerProperty(0);
+  private IntegerProperty playerItemDefence = intToIntegerProperty(0);
+  private IntegerProperty playerItemCritChance = intToIntegerProperty(0);
+  private IntegerProperty playerItemCritDamage = intToIntegerProperty(0);
      
   // monster UI variables
   private GridPane monsterUI;
@@ -69,11 +85,11 @@ public class GUI extends Application{
 
   // event UI variables
   private GridPane eventUI;
-  private Button option1;
-  private Button option2;
-  private Button option3;
-  private Button option4;
-  private Button option5;
+  // private Button option1;
+  // private Button option2;
+  // private Button option3;
+  // private Button option4;
+  // private Button option5;
 
   int WINDOWWIDTH = 1000;
   int WINDOWHEIGHT = 1000;
@@ -143,7 +159,7 @@ public class GUI extends Application{
     
 
     // create label for playerLevel
-    SimpleBindingIntegerLabel playerLevelLabel = new SimpleBindingIntegerLabel("Level: ", this.playerLevel);
+    SimpleBindingIntegerLabel playerLevelLabel = new SimpleBindingIntegerLabel("Level: ", this.playerLevel, "");
 
     // create player HP label
     Label playerHPText = new Label();
@@ -185,11 +201,12 @@ public class GUI extends Application{
     this.playerUI.setHgap(10);
     this.playerUI.setVgap(10);
 
-    SimpleBindingIntegerLabel playerAttackLabel = new SimpleBindingIntegerLabel("Attack: ", this.playerAttack);
-    SimpleBindingIntegerLabel playerDefenceLabel = new SimpleBindingIntegerLabel("Defence: ", this.playerDefence);
-    SimpleBindingIntegerLabel playerCritChanceLabel = new SimpleBindingIntegerLabel("Crit Chance: ", this.playerCritChance);
-    SimpleBindingIntegerLabel playerCritDamageLabel = new SimpleBindingIntegerLabel("Bonus Crit Damage: ", this.playerCritDamage);
-    SimpleBindingIntegerLabel playerGoldLabel = new SimpleBindingIntegerLabel("Gold: ", this.playerGold);
+    GridPane playerStats = new GridPane();
+    SimpleBindingIntegerLabel playerAttackLabel = new SimpleBindingIntegerLabel("Attack: ", this.playerAttack, "");
+    SimpleBindingIntegerLabel playerDefenceLabel = new SimpleBindingIntegerLabel("Defence: ", this.playerDefence, "");
+    SimpleBindingIntegerLabel playerCritChanceLabel = new SimpleBindingIntegerLabel("Crit Chance: ", this.playerCritChance, "");
+    SimpleBindingIntegerLabel playerCritDamageLabel = new SimpleBindingIntegerLabel("Bonus Crit Damage: ", this.playerCritDamage, "");
+    SimpleBindingIntegerLabel playerGoldLabel = new SimpleBindingIntegerLabel("Gold: ", this.playerGold, "");
 
     // create XP Label
     Label playerXPLabel = new Label();
@@ -208,12 +225,32 @@ public class GUI extends Application{
     playerXPLabel.textProperty().bind(playerXPBinding);
     
     
-    this.playerUI.add(playerAttackLabel, 0, 2);
-    this.playerUI.add(playerDefenceLabel, 0, 3);
-    this.playerUI.add(playerCritChanceLabel, 0, 4);
-    this.playerUI.add(playerCritDamageLabel, 0, 5);
-    this.playerUI.add(playerXPLabel, 0, 6);
-    this.playerUI.add(playerGoldLabel, 0, 7);
+    playerStats.add(playerAttackLabel, 0, 0);
+    playerStats.add(playerDefenceLabel, 0, 1);
+    playerStats.add(playerCritChanceLabel, 0, 2);
+    playerStats.add(playerCritDamageLabel, 0, 3);
+    playerStats.add(playerXPLabel, 0, 4);
+    playerStats.add(playerGoldLabel, 0, 5);
+
+    playerItemStats = new GridPane();
+
+    GridPane playerEquipment = new GridPane();
+    SimpleBindingStringLabel playerWeaponLabel = new SimpleBindingStringLabel("Weapon: ", this.playerWeapon, "");
+    SimpleBindingStringLabel playerShieldLabel = new SimpleBindingStringLabel("Shield: ", this.playerShield, "");
+    SimpleBindingStringLabel playerArmourLabel = new SimpleBindingStringLabel("Armour: ", this.playerArmour, "");
+    SimpleBindingStringLabel playerBootsLabel = new SimpleBindingStringLabel("Boots: ", this.playerBoots, "");
+    SimpleBindingStringLabel playerHelmetLabel = new SimpleBindingStringLabel("Helmet: ", this.playerHelmet, "");
+    SimpleBindingStringLabel playeRingLabel = new SimpleBindingStringLabel("Ring: ", this.playerRing, "");    
+    playerEquipment.add(playerWeaponLabel, 0, 0);
+    playerEquipment.add(playerShieldLabel, 0, 1);
+    playerEquipment.add(playerArmourLabel, 0, 2);
+    playerEquipment.add(playerBootsLabel, 0, 3);
+    playerEquipment.add(playerHelmetLabel, 0, 4);
+    playerEquipment.add(playeRingLabel, 0, 5);
+
+    this.playerUI.add(playerStats, 0, 0);
+    this.playerUI.add(playerEquipment, 0, 1);
+    this.playerUI.add(playerItemStats, 1, 0);
 
 
     
@@ -227,13 +264,6 @@ public class GUI extends Application{
 
     // create Label for monstername to be edited when a monster is created
     this.monsterName = new Label();
-    // SimpleBindingIntegerLabel monsterAttackLabel = new SimpleBindingIntegerLabel("Attack: ", this.monsterAttack);
-    // SimpleBindingIntegerLabel monsterDefenceLabel = new SimpleBindingIntegerLabel("Defence: ", this.monsterDefence);
-    // SimpleBindingIntegerLabel monsterCritChanceLabel = new SimpleBindingIntegerLabel("Crit Chance: ", this.monsterCritChance);
-    // SimpleBindingIntegerLabel monsterCritDamageLabel = new SimpleBindingIntegerLabel("Crit Damage: ", this.monsterCritDamage);
-    // SimpleBindingIntegerLabel monsterGoldLabel = new SimpleBindingIntegerLabel("Gold: ", this.monsterGold);
-    
-
     
     // create monster HP bar
     this.monsterHPBar = new Rectangle();
@@ -282,7 +312,7 @@ public class GUI extends Application{
     root.add(monsterUI, 8, 3);
     root.setColumnSpan(monsterUI, 3);
     root.add(eventUI, 0, 10);
-    root.setColumnSpan(eventUI, 9);
+    root.setColumnSpan(eventUI, 11);
 
    
     // set the scene and show the window
@@ -299,9 +329,20 @@ public class GUI extends Application{
     this.player = game.getPlayer();
   }
 
-  public void print(String String, Color colour, String style){
-    Text text = new Text("\n" + String);
+  public void playerGoldUpdate() {
+    this.playerGold.set(this.player.getGold());
+  }
+
+  public void print(String string, Color colour, String style){
+    Text text = new Text();
+    if (style.contains("continuous")) {
+      text.setText(string);
+    }
+    else {
+      text.setText("\n" + string);
+    }
     switch (style) {
+      // TODO: alter code to allow for continuous AND bold/italic etc.
       
       case "italic":
         text.setFont(Font.font("System Regular", FontWeight.MEDIUM, FontPosture.ITALIC, 12));
@@ -313,11 +354,14 @@ public class GUI extends Application{
         text.setFont(Font.font("System Regular", FontWeight.BOLD, FontPosture.REGULAR, 3));
         break;
       default:
+        text.setFont(Font.font("System Regular", FontWeight.MEDIUM, FontPosture.REGULAR, 12));
         break;
     }
     text.setFill(colour);
     textBox.getChildren().add(text);
   }
+  
+  
 
   public void printSpace() { 
     print("\n", Color.BLACK, "space");
@@ -344,7 +388,7 @@ public class GUI extends Application{
     }
     if (defender.equals("You")) {
       print(attacker + " dealt " + damage + " damage to " + defender, Color.BLACK, "");
-      playerCurrentHPUpdate(damage);
+      playerCurrentHPUpdate();
     } else {
     print(attacker + " dealt " + damage + " damage to the " + defender, Color.BLACK, "");
     monHPUpdate(damage);
@@ -361,10 +405,11 @@ public class GUI extends Application{
 
   }
 
-  private void playerCurrentHPUpdate(int damage) {
-    this.playerCurrentHPVisible.set(Math.max(0,(this.playerCurrentHPVisible.get() - damage)));
+  public void playerCurrentHPUpdate() {
+    this.playerCurrentHPVisible.set(player.getCurrentHP());
     double playerHPPercent = (double) this.playerCurrentHPVisible.get()/ this.playerMaxHPVisible.get(); 
-    this.playerHPBar.setWidth(900*playerHPPercent);
+    this.playerHPBar.setWidth(PLAYERHPWIDTH*playerHPPercent);
+    System.out.println(this.playerCurrentHPVisible);
   }
 
   public void levelUp(int level, int newMaxHP) {
@@ -372,15 +417,109 @@ public class GUI extends Application{
     print("You are now level " + level, Color.BLACK, "");
     this.playerCurrentHPVisible.set(newMaxHP);
     this.playerMaxHPVisible.set(newMaxHP);
-    this.playerHPBar.setWidth(900);
+    this.playerHPBar.setWidth(PLAYERHPWIDTH);
     this.playerLevel.set((this.playerLevel.get() + 1));
     this.playerAttack.set(this.player.getAttack());
     this.playerDefence.set(this.player.getDefence());
     this.playerCritChance.set(this.player.getCritChance());
     this.playerCritDamage.set(this.player.getCritDamage());
     this.xpForNextLevel.set(this.player.getXPForNextLevel());
+  }
 
+  public void newEquipment(Equipment equipment, String type) {
+    // get key details
+    String name = equipment.getName();
+    HashMap<String, Integer> combatStats = equipment.getCombatStats();
+    String statString = statString(combatStats);
 
+    // output equipment info to TextFlow
+    printSpace();
+    print("You have found a " + name, Color.BLACK, "");
+    print(statString, Color.BLACK, "");
+
+    switch (type) {
+      case "weapon1":
+        this.playerWeapon.set(name + " (" + statString + ")");
+        break;
+      case "shield":
+        this.playerShield.set(name + " (" + statString + ")");
+        break;
+      case "weapon2":
+        this.playerWeapon.set(name + " (" + statString + ")");
+        this.playerShield.set("(N/A - Two Handed Weapon Equipped)");
+        break;
+      case "armour":
+        this.playerArmour.set(name + " (" + statString + ")");
+        break;
+      case "boots":
+        this.playerBoots.set(name + " (" + statString + ")");
+        break;
+      case "helmet":
+        this.playerHelmet.set(name + " (" + statString + ")");
+        break;
+      case "ring":
+        this.playerRing.set(name + " (" + statString + ")");
+        break;
+    }
+    ItemStatUpdate();
+  }
+
+  public void ItemStatUpdate() {
+    // clear previous itemStat Labels
+    playerItemStats.getChildren().clear();
+
+    // add new labels
+    HashMap<String, Integer> itemStats = this.player.getItemStats();
+    for (HashMap.Entry<String, Integer> entry : itemStats.entrySet()) {
+      String stat = entry.getKey();
+      switch(stat) {
+        case "HP: ":
+          this.playerItemHP.set(entry.getValue());
+          if (this.playerItemHP.get() != 0) {
+            SimpleBindingIntegerLabel playerItemHPLabel = new SimpleBindingIntegerLabel("(", this.playerItemHP, ")");
+          }
+          break;
+        case "Attack: ":
+          this.playerItemAttack.set(entry.getValue());
+          if (this.playerItemAttack.get() != 0) {
+            SimpleBindingIntegerLabel playerItemAttackLabel = new SimpleBindingIntegerLabel("(", this.playerItemAttack, ")");
+            this.playerItemStats.add(playerItemAttackLabel, 0,1);
+          }
+          break;
+          case "Defence: ":
+          this.playerItemDefence.set(entry.getValue());
+          if (this.playerItemDefence.get() != 0) {
+            SimpleBindingIntegerLabel playerItemDefenceLabel = new SimpleBindingIntegerLabel("(", this.playerItemDefence, ")");
+            this.playerItemStats.add(playerItemDefenceLabel, 0,2);
+          }
+          break;
+          case "Crit Chance: ":
+          this.playerItemCritChance.set(entry.getValue());
+          if (this.playerItemCritChance.get() != 0) {
+            SimpleBindingIntegerLabel playerItemCritChanceLabel = new SimpleBindingIntegerLabel("(", this.playerItemDefence, ")");
+            this.playerItemStats.add(playerItemCritChanceLabel, 0,3);
+          }
+          break;
+          case "Crit Damage: ":
+          this.playerItemCritDamage.set(entry.getValue());
+          if (this.playerItemCritDamage.get() != 0) {
+            SimpleBindingIntegerLabel playerItemCritDamageLabel = new SimpleBindingIntegerLabel("(", this.playerItemCritDamage, ")");
+            this.playerItemStats.add(playerItemCritDamageLabel, 0,4);
+          }
+          break;
+      }
+    }
+  }
+
+  private String statString(HashMap<String, Integer> combatStats) {
+    // function to get String of all equipment stats
+    String statPrint = "";
+    for (HashMap.Entry<String, Integer> entry : combatStats.entrySet()) {
+      String stat = entry.getKey();
+      Integer value = entry.getValue();
+      statPrint = statPrint + stat + value;
+    }
+    return statPrint;
   }
 
   public void newMonster(Monster mon) {
@@ -403,25 +542,28 @@ public class GUI extends Application{
     };
     monsterHPText.textProperty().bind(MonsterHPBinding);
 
-    SimpleBindingIntegerLabel monsterAttackLabel = new SimpleBindingIntegerLabel("Attack: ", monsterAttack);
-    SimpleBindingIntegerLabel monsterDefenceLabel = new SimpleBindingIntegerLabel("Defence: ", monsterDefence);
-    SimpleBindingIntegerLabel monsterCritChanceLabel = new SimpleBindingIntegerLabel("Crit Chance: ", monsterCritChance);
-    SimpleBindingIntegerLabel monsterCritDamageLabel = new SimpleBindingIntegerLabel("Bonus Crit Damage: ", monsterCritDamage);
-    SimpleBindingIntegerLabel monsterGoldLabel = new SimpleBindingIntegerLabel("Gold: ", monsterGold);
-    SimpleBindingIntegerLabel monsterXPLabel = new SimpleBindingIntegerLabel("XP: ", monsterXP);
+    SimpleBindingIntegerLabel monsterAttackLabel = new SimpleBindingIntegerLabel("Attack: ", monsterAttack, "");
+    SimpleBindingIntegerLabel monsterDefenceLabel = new SimpleBindingIntegerLabel("Defence: ", monsterDefence, "");
+    SimpleBindingIntegerLabel monsterCritChanceLabel = new SimpleBindingIntegerLabel("Crit Chance: ", monsterCritChance, "");
+    SimpleBindingIntegerLabel monsterCritDamageLabel = new SimpleBindingIntegerLabel("Bonus Crit Damage: ", monsterCritDamage, "");
+    SimpleBindingIntegerLabel monsterGoldLabel = new SimpleBindingIntegerLabel("Gold: ", monsterGold, "");
+    SimpleBindingIntegerLabel monsterXPLabel = new SimpleBindingIntegerLabel("XP: ", monsterXP, "");
 
+    GridPane monsterStats = new GridPane();
     
 
     this.monsterUI.add(monsterHPText, 1, 1);
     this.monsterUI.add(this.monsterMissingHPBar, 0, 1);
     this.monsterUI.add(this.monsterHPBar, 0, 1);
     this.monsterHPBar.setWidth(MONHPWIDTH);
-    this.monsterUI.add(monsterAttackLabel, 0, 2);
-    this.monsterUI.add(monsterDefenceLabel, 0, 3);
-    this.monsterUI.add(monsterCritChanceLabel, 0, 4);
-    this.monsterUI.add(monsterCritDamageLabel, 0, 5);
-    this.monsterUI.add(monsterGoldLabel, 0, 6);
-    this.monsterUI.add(monsterXPLabel, 0, 7);
+    monsterStats.add(monsterAttackLabel, 0, 0);
+    monsterStats.add(monsterDefenceLabel, 0, 1);
+    monsterStats.add(monsterCritChanceLabel, 0, 2);
+    monsterStats.add(monsterCritDamageLabel, 0, 3);
+    monsterStats.add(monsterGoldLabel, 0, 4);
+    monsterStats.add(monsterXPLabel, 0, 5);
+
+    this.monsterUI.add(monsterStats, 0, 2);
   }
 
   public void removeMonster() {
@@ -431,11 +573,6 @@ public class GUI extends Application{
     monsterUI.getChildren().removeIf( node -> GridPane.getColumnIndex(node) == 0 && GridPane.getRowIndex(node) == 1);
     monsterUI.getChildren().removeIf( node -> GridPane.getColumnIndex(node) == 1 && GridPane.getRowIndex(node) == 1);
     monsterUI.getChildren().removeIf( node -> GridPane.getColumnIndex(node) == 0 && GridPane.getRowIndex(node) == 2);
-    monsterUI.getChildren().removeIf( node -> GridPane.getColumnIndex(node) == 0 && GridPane.getRowIndex(node) == 3);
-    monsterUI.getChildren().removeIf( node -> GridPane.getColumnIndex(node) == 0 && GridPane.getRowIndex(node) == 4);
-    monsterUI.getChildren().removeIf( node -> GridPane.getColumnIndex(node) == 0 && GridPane.getRowIndex(node) == 5);
-    monsterUI.getChildren().removeIf( node -> GridPane.getColumnIndex(node) == 0 && GridPane.getRowIndex(node) == 6);    
-    monsterUI.getChildren().removeIf( node -> GridPane.getColumnIndex(node) == 0 && GridPane.getRowIndex(node) == 7);
   }
 
   private void setMonsterStats(Monster mon) {
@@ -466,6 +603,13 @@ public class GUI extends Application{
     this.monsterCurrentHPVisible.set(Math.max(0,(this.monsterCurrentHPVisible.get() - damage)));
     double monsterHPPercent = (double) this.monsterCurrentHPVisible.get()/ this.monsterMaxHPVisible.get(); 
     this.monsterHPBar.setWidth(MONHPWIDTH*monsterHPPercent);
+  }
+
+  public void removeEvent() {
+    for(int i = 0; i< 5; i++) {
+      final int column = i;
+      eventUI.getChildren().removeIf( node -> GridPane.getColumnIndex(node) == column && GridPane.getRowIndex(node) == 0);
+    }
   }
 
   public void newEventOption(int i, List<Object> option) {

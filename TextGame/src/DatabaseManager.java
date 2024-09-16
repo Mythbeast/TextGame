@@ -55,11 +55,11 @@ String location = "jdbc:sqlite:C:\\Coding Projects\\TextGame\\game.db";
     }
   } catch (SQLException e) {
   System.out.println(e.getMessage());
-  }
   // unreachable unless error occurs
   System.out.println("Error: getAreaInfo error");
   List<Object> errorList = new ArrayList<Object>();
   return errorList;
+  }  
   }
 
   public ArrayList<Integer> getPlayerStats(int level) {
@@ -85,11 +85,11 @@ String location = "jdbc:sqlite:C:\\Coding Projects\\TextGame\\game.db";
     } 
     } catch (SQLException e) {
       System.out.println(e.getMessage());
-    }
-  // unreachable unless error occurs
-  System.out.println("Error: getPlayerStats error");
-  ArrayList<Integer> errorList = new ArrayList<Integer>();
-  return errorList;
+      // unreachable unless error occurs
+      System.out.println("Error: getPlayerStats error");
+      ArrayList<Integer> errorList = new ArrayList<Integer>();
+      return errorList;
+    }  
   }
 
   public List<Object> getMonsterInfo(String monsterID) {
@@ -119,43 +119,11 @@ String location = "jdbc:sqlite:C:\\Coding Projects\\TextGame\\game.db";
     } 
     } catch (SQLException e) {
       System.out.println(e.getMessage());
-    }
-  // unreachable unless error occurs
-  System.out.println("Error: getMonsterInfo error");
-  List<Object> errorList = new ArrayList<Object>();
-  return errorList;
-  }
-
-  public List<Object> getEventInfo(String eventID) {
-    String sql = "SELECT eventText, numOptions, repeatable, option1, option2, option3, option4, option5 FROM Event WHERE eventID = ?";
-
-  try  (Connection conn = this.connect();
-  PreparedStatement pstmt = conn.prepareStatement(sql)) {
-    // add in monsterID to SQL query
-    pstmt.setString(1, eventID);
-    try (ResultSet rs = pstmt.executeQuery()) {
-      List<Object> result = new ArrayList<Object>();
-      
-      if (rs.next()) {
-        result.add(rs.getString("eventText"));
-        result.add(rs.getInt("numOptions"));
-        result.add(rs.getInt("repeatable"));
-        result.add(rs.getInt("option1"));
-        result.add(rs.getInt("option2"));
-        result.add(rs.getInt("option3"));
-        result.add(rs.getInt("option4"));
-        result.add(rs.getInt("option5"));
-      }
-
-      return result;
-    } 
-    } catch (SQLException e) {
-      System.out.println(e.getMessage());
-    }
-  // unreachable unless error occurs
-  System.out.println("Error: getMonsterInfo error");
-  List<Object> errorList = new ArrayList<Object>();
-  return errorList;
+      // unreachable unless error occurs
+      System.out.println("Error: getMonsterInfo error");
+      List<Object> errorList = new ArrayList<Object>();
+      return errorList;
+    }  
   }
 
   public String getAreaName(String areaID) {
@@ -169,7 +137,6 @@ String location = "jdbc:sqlite:C:\\Coding Projects\\TextGame\\game.db";
         
         while (rs.next()) {
           name = rs.getString("areaName");
-                    
         }
         return name;
       }
@@ -177,10 +144,10 @@ String location = "jdbc:sqlite:C:\\Coding Projects\\TextGame\\game.db";
       
     } catch (SQLException e) {
       System.out.println(e.getMessage());
-    }
-  // unreachable unless error occurs
-  System.out.println("Error: getAreaName error");
-  return "";
+      // unreachable unless error occurs
+      System.out.println("Error: getAreaName error");
+      return "";
+    }  
   }
 
   public List<Object> getMonsterList(String areaID) {
@@ -204,12 +171,11 @@ String location = "jdbc:sqlite:C:\\Coding Projects\\TextGame\\game.db";
       }
     } catch (SQLException e) {
         System.out.println(e.getMessage());
-    }
-
-    // unreachable unless error occurs
-    System.out.println("Error: getMonsterList error");
-    List<Object> errorList = new ArrayList<Object>();
-    return errorList;
+        // unreachable unless error occurs
+        System.out.println("Error: getMonsterList error");
+        List<Object> errorList = new ArrayList<Object>();
+        return errorList;
+    }    
   }
 
   public List<Object> getAreaList(String areaID) {
@@ -232,13 +198,12 @@ String location = "jdbc:sqlite:C:\\Coding Projects\\TextGame\\game.db";
       return result;
       }
     } catch (SQLException e) {
-        System.out.println(e.getMessage());
-    }
-
-    // unreachable unless error occurs
-    System.out.println("Error: getAreaList error");
-    List<Object> errorList = new ArrayList<Object>();
-    return errorList;
+      System.out.println(e.getMessage());
+      // unreachable unless error occurs
+      System.out.println("Error: getAreaList error");
+      List<Object> errorList = new ArrayList<Object>();
+      return errorList;
+    }    
   }
 
   public List<Object> getEventList(String areaID) {
@@ -262,13 +227,12 @@ String location = "jdbc:sqlite:C:\\Coding Projects\\TextGame\\game.db";
       return result;
       }
     } catch (SQLException e) {
-        System.out.println(e.getMessage());
-    }
-
-    // unreachable unless error occurs
-    System.out.println("Error: getEventList error");
-    List<Object> errorList = new ArrayList<Object>();
-    return errorList;
+      System.out.println(e.getMessage());
+      // unreachable unless error occurs
+      System.out.println("Error: getEventList error");
+      List<Object> errorList = new ArrayList<Object>();
+      return errorList;
+    }    
   }
 
   public List<Object> getEventOptions(String eventID) {
@@ -290,52 +254,109 @@ String location = "jdbc:sqlite:C:\\Coding Projects\\TextGame\\game.db";
       for (int i = 0; i <= optionIDs.size() - 1; i++) {
         eventOptions.add(getOptionInfo((String) optionIDs.get(i))); 
       }
-      System.out.println(eventOptions);
       return eventOptions;
       
     
     } catch (SQLException e) {
       System.out.println(e.getMessage());
-  }
-
-  // unreachable unless error occurs
-  System.out.println("Error: getEventOptions error");
-  List<Object> errorList = new ArrayList<Object>();
-  return errorList;
+      // unreachable unless error occurs
+      System.out.println("Error: getEventOptions error");
+      List<Object> errorList = new ArrayList<Object>();
+      return errorList;
+    }  
   }
 
 
 
   private List<Object> getOptionInfo (String optionID) {
 
-    String sql2 = "SELECT optionText, goldCost, reqItemID, heal, goldPerHeal, itemGet, itemLose, equip FROM EventOptions where optionID = ?";
+    String sql = "SELECT optionText, goldCost, reqItemID, heal, goldPerHeal, itemGet, itemLose, equip, eventText FROM EventOptions where optionID = ?";
 
     try  (Connection conn = this.connect();
-    PreparedStatement pstmt = conn.prepareStatement(sql2)) {
-      // add in monsterID to SQL query
+    PreparedStatement pstmt = conn.prepareStatement(sql)) {
+      // add in optionID to SQL query
       pstmt.setString(1, optionID);
       try (ResultSet rs = pstmt.executeQuery()) {
-        List<Object> option = new ArrayList<>();
+        List<Object> result = new ArrayList<>();
         while (rs.next()) {
-          option.add(rs.getString("optionText"));
-          option.add(rs.getInt("goldCost"));
-          option.add(rs.getString("reqItemID"));
-          option.add(rs.getInt("heal"));
-          option.add(rs.getInt("goldPerHeal"));
-          option.add(rs.getString("itemGet"));
-          option.add(rs.getString("itemLose"));
-          option.add(rs.getString("equip"));
+          result.add(rs.getString("optionText"));
+          result.add(rs.getInt("goldCost"));
+          result.add(rs.getString("reqItemID"));
+          result.add(rs.getInt("heal"));
+          result.add(rs.getInt("goldPerHeal"));
+          result.add(rs.getString("itemGet"));
+          result.add(rs.getString("itemLose"));
+          result.add(rs.getString("equip"));
+          result.add(rs.getString("eventText"));
         }
-      return option;
+      return result;
       }
     } catch (SQLException e) {
-        System.out.println(e.getMessage());
-    }
+      System.out.println(e.getMessage());
+      // unreachable unless error occurs
+      System.out.println("Error: getOptionInfo error");
+      List<Object> errorList = new ArrayList<Object>();
+      return errorList;
+    }    
+  }
 
-    // unreachable unless error occurs
-    System.out.println("Error: getOptionInfo error");
-    List<Object> errorList = new ArrayList<Object>();
-    return errorList;
+  public List<Object> getEquipmentInfo (String equipmentID) {
+
+    String sql = "SELECT name, type, HP, attack, defence, critChance, critDamage FROM Equipment where equipmentID = ?";
+
+    try  (Connection conn = this.connect();
+    PreparedStatement pstmt = conn.prepareStatement(sql)) {
+      // add in equipmentID to SQL query
+      pstmt.setString(1, equipmentID);
+      try (ResultSet rs = pstmt.executeQuery()) {
+        List<Object> result = new ArrayList<>();
+        while (rs.next()) {
+          result.add(rs.getString("name"));
+          result.add(rs.getString("type"));
+          result.add(rs.getInt("HP"));
+          result.add(rs.getInt("attack"));
+          result.add(rs.getInt("defence"));
+          result.add(rs.getInt("critChance"));
+          result.add(rs.getInt("critDamage"));
+        }
+      return result;
+      }
+    } catch (SQLException e) {
+      System.out.println(e.getMessage());
+      // unreachable unless error occurs
+      System.out.println("Error: getEquipmentInfo error");
+      List<Object> errorList = new ArrayList<Object>();
+      return errorList;
+    }    
+  }
+
+  public boolean keyItemCheck (String itemID) {
+
+    String sql = "SELECT COUNT(1) FROM KeyItems where keyItemID = ?";
+
+    try  (Connection conn = this.connect();
+    PreparedStatement pstmt = conn.prepareStatement(sql)) {
+      // add in itemID to SQL query
+      pstmt.setString(1, itemID);
+      try (ResultSet rs = pstmt.executeQuery()) {
+        int result = 0;
+        if (rs.next()) {
+          result = rs.getInt(1);
+        }
+
+        switch(result) {
+          case 1:
+            return true;
+          default:
+            return false;
+        }
+      }
+    } catch (SQLException e) {
+      System.out.println(e.getMessage());
+      // unreachable unless error occurs
+      System.out.println("Error: getEquipmentInfo error");
+      return false;
+    }   
   }
 
 }

@@ -1,4 +1,5 @@
 import java.util.*;
+import javafx.scene.paint.Color;
 
 
 // TODO: clean up Area functions using class elements
@@ -19,14 +20,15 @@ public class Player extends CombatEntity{
   // variable used purely for GUI purposes
   private ArrayList<String> discoveredAreaNames;
 
-  
-  // variables used to explore
+    // variables used to explore
   private String currentAreaID;
   private Area currentArea;
-  // itemStats could contain the following:
-  // hpBonus, attackBonus, defenceBonus, critChanceBonus, critDamageBonus 
-  // goldMultiplierBonus???, dropRateIncrease???, 
-  private int[] itemStats;
+
+  // equipment is {Weapon, Shield, ...}
+  private ArrayList<Equipment> equipmentList;
+    // itemStats are HP, attack, defence, critChance and critDamage 
+  
+  private HashMap<String, Integer> itemStats;
 
   private int xpForNextLevel;
   
@@ -38,8 +40,10 @@ public class Player extends CombatEntity{
     this.level = 1;
     this.xp = 0;
     this.gold = 500;
-    loadStats(this.level);
+    loadPlayerStats(this.level);
     this.currentHP = this.maxHP;
+    this.equipmentList = new ArrayList();
+    this.itemStats = new HashMap<>();
 
     this.discoveredEventIDs = new ArrayList<String>();
 
@@ -53,8 +57,6 @@ public class Player extends CombatEntity{
 
     this.currentAreaID = this.discoveredAreaIDs.get(0);
     this.currentArea = this.discoveredAreas.get(0);
-
-    
   }
 
   public void setGUI(GUI gui) {
@@ -83,6 +85,23 @@ public class Player extends CombatEntity{
     this.currentArea = discoveredAreas.get(discoveryIndex);
   }
 
+  public int[] getCombatStats() {
+    int[] playerStats = {maxHP, currentHP, attack, defence, critChance, critDamage, 0};
+    int[] itemCombatStats = {
+        0, 
+        0, 
+        this.itemStats.getOrDefault("Attack: ", 0), 
+        this.itemStats.getOrDefault("Defence: ", 0), 
+        this.itemStats.getOrDefault("Crit Chance: ", 0), 
+        this.itemStats.getOrDefault("Crit Damage: ", 0)};
+    int[] stats = intArrayAdd(playerStats, itemCombatStats);
+    return stats;
+  }
+
+  public HashMap<String, Integer> getItemStats() {
+    return this.itemStats;
+  }
+
   public void gainGold(int amount) {
     this.gold += amount;
   }
@@ -98,7 +117,73 @@ public class Player extends CombatEntity{
     }
   }
 
-  private void loadStats(int level) {
+  public void equip(Equipment equipment, String type) {
+    // TODO: condense terrible duplicated code
+    // messy code due to the size of equipmentList changing when an item is removed
+    // if 2Handed weapon - iterate through equipmentList and check for weapons and shields
+    if (type.equals("weapon2")) {
+      HashMap<String, Integer> oldStats;
+      // variables used to hold index to avoid removing during for loop, -1 used so that all indices are greater
+      int oldWeaponIndex = -1;
+      int oldShieldIndex = -1;
+      for (int i=0; i < equipmentList.size(); i++) {
+        // .contains used to get weapon1 and weapon2
+        if (equipmentList.get(i).getType().contains("weapon")) {
+          // if so, remove stats from itemstats and save index
+          Equipment oldWeapon = equipmentList.get(i);
+          oldStats = oldWeapon.getCombatStats();
+          this.itemStats = hashMapSubtract(this.itemStats, oldStats);
+          oldWeaponIndex = i;
+        }
+        if (equipmentList.get(i).getType().equals("shield")) {
+          // if so, remove stats from itemstats and save index
+          Equipment oldShield = equipmentList.get(i);
+          oldStats = oldShield.getCombatStats();
+          this.itemStats = hashMapSubtract(this.itemStats, oldStats);
+          oldShieldIndex = i;
+        }
+      }
+      // remove highest index first to avoid second index changing
+      int higherIndex = Math.max(oldWeaponIndex, oldShieldIndex);
+      int lowerIndex = Math.min(oldWeaponIndex, oldShieldIndex);
+      if (higherIndex >= 0) {
+        equipmentList.remove(higherIndex);
+      }
+      if (lowerIndex >= 0) {
+        equipmentList.remove(lowerIndex);
+      }         
+    } else{
+      // for all non 2H weapon, find index of old equipment and remove
+      for (int i=0; i < equipmentList.size(); i++) {
+        if (equipmentList.get(i).getType().equals(type)) {
+          // if so, remove stats from itemStats and remove equipment
+          Equipment oldEquipment = equipmentList.get(i);
+          HashMap<String, Integer> oldStats = oldEquipment.getCombatStats();
+          this.itemStats = hashMapSubtract(this.itemStats, oldStats);
+          equipmentList.remove(i);
+          break;        
+        }
+        // case where player has a 2H weapon and wants to swap it for a shield
+        if (type.equals("shield")) {
+          if (equipmentList.get(i).getType().equals("weapon2")) {
+            // if so, remove stats from itemStats and remove equipment
+            Equipment oldEquipment = equipmentList.get(i);
+            HashMap<String, Integer> oldStats = oldEquipment.getCombatStats();
+            this.itemStats = hashMapSubtract(this.itemStats, oldStats);
+            equipmentList.remove(i);
+          }
+        }
+      }
+    }
+    this.equipmentList.add(equipment);
+    this.itemStats = hashMapAdd(equipment.getCombatStats(), this.itemStats);    
+  }
+
+  
+
+
+
+  private void loadPlayerStats(int level) {
     // stats are {xpNeeded, maxHP, attack, defence, critChance, critDamage}
     ArrayList<Integer> stats = db.getPlayerStats(this.level);
     this.xpForNextLevel = stats.get(0);
@@ -111,7 +196,7 @@ public class Player extends CombatEntity{
 
   private void levelUp() {
     this.level += 1;
-    loadStats(this.level);
+    loadPlayerStats(this.level);
     this.currentHP = this.maxHP;
     gui.levelUp(this.level, this.maxHP);
   }
@@ -146,7 +231,38 @@ public class Player extends CombatEntity{
     }
   }
 
+  private HashMap<String, Integer> hashMapSubtract(HashMap<String, Integer> hashMap1, HashMap<String, Integer>hashMap2) {
+    for (HashMap.Entry<String, Integer> entry : hashMap2.entrySet()) {
+      String stat = entry.getKey();
+      Integer value2 = entry.getValue();
+      Integer value1 = hashMap1.get(stat);
+      hashMap1.replace(stat, value1, value1-value2);
+    }
+    return hashMap1;
+  }
+
+  private HashMap<String, Integer> hashMapAdd(HashMap<String, Integer> hashMap1, HashMap<String, Integer>hashMap2) {
+    for (HashMap.Entry<String, Integer> entry : hashMap2.entrySet()) {
+      String stat = entry.getKey();
+      Integer value2 = entry.getValue();
+      Integer value1 = hashMap1.get(stat);
+      hashMap1.replace(stat, value1, value1+value2);
+    }
+    return hashMap1;
+  }
+
+  private int[] intArrayAdd(int[] array1, int[] array2) {
+    int[] result = new int[array1.length];
+    for (int i = 0; i< array1.length - 1; i++) {
+      result[i] = array1[i] + array2[i];
+    }
+    return result;
+  }
   
   
 
 }
+
+  
+  
+

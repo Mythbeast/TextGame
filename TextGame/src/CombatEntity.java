@@ -1,16 +1,13 @@
 
 import java.util.ArrayList;
 
-public class CombatEntity {
+public class CombatEntity extends AttackStats{
   protected int level;
   protected int xp;
   protected int maxHP;
   protected int currentHP;
-  protected int attack;
-  protected int defence;
   protected int gold;
-  protected int critChance;
-  protected int critDamage;
+  
 
 CombatEntity() {
 
@@ -38,24 +35,8 @@ public int getMaxHP() {
   return this.maxHP;
 }
 
-public int getAttack() {
-  return this.attack;
-}
-
-public int getDefence() {
-  return this.defence;
-}
-
 public int getGold() {
   return this.gold;
-}
-
-public int getCritChance() {
-  return this.critChance;
-}
-
-public int getCritDamage() {
-  return this.critDamage;
 }
 
 public int[] getCombatStats() {
