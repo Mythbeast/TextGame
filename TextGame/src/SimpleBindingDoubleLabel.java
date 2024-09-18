@@ -1,10 +1,10 @@
 import javafx.beans.binding.StringBinding;
-import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.DoubleProperty;
 import javafx.scene.control.Label;
 
-public class SimpleBindingIntegerLabel extends Label {
+public class SimpleBindingDoubleLabel extends Label {
 
-  public SimpleBindingIntegerLabel(String string1, IntegerProperty variable, String string2) {
+  public SimpleBindingDoubleLabel(String string1, DoubleProperty variable, String string2) {
     this.textProperty().bind(new StringBinding() {
       {
         super.bind(variable);

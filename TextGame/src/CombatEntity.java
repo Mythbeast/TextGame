@@ -1,56 +1,52 @@
 
-import java.util.ArrayList;
-
-public class CombatEntity extends AttackStats{
+public class CombatEntity extends AttackStats {
   protected int level;
-  protected int xp;
-  protected int maxHP;
-  protected int currentHP;
+  protected double xp;
+  protected int maxHp;
+  protected int currentHp;
   protected int gold;
-  
 
-CombatEntity() {
+  public CombatEntity() {
 
-}
+  }
 
-// getters and setters
+  // getters and setters
 
-public int getLevel() {
-  return this.level;
-}
+  public int getLevel() {
+    return this.level;
+  }
 
-public int getCurrentHP() {
-  return this.currentHP;
-}
+  public int getCurrentHp() {
+    return this.currentHp;
+  }
 
-public void setCurrentHP(int HP) {
-  this.currentHP = clamp(HP, 0, this.maxHP);
-}
+  public void setCurrentHp(int hp) {
+    this.currentHp = clamp(hp, 0, this.maxHp);
+  }
 
-public void heal(int heal) {
-  this.currentHP = clamp(this.currentHP + heal, 0, this.maxHP);
-}
+  public void heal(int heal) {
+    this.currentHp = clamp(this.currentHp + heal, 0, this.maxHp);
+  }
 
-public int getMaxHP() {
-  return this.maxHP;
-}
+  public int getMaxHp() {
+    return this.maxHp;
+  }
 
-public int getGold() {
-  return this.gold;
-}
+  public int getGold() {
+    return this.gold;
+  }
 
-public int[] getCombatStats() {
-  int[] stats = {maxHP, currentHP, attack, defence, critChance, critDamage, 0};
-  return stats;
-}
+  public int[] getCombatStats() {
+    int[] stats = { maxHp, currentHp, attack, defence, critChance, critDamage, 0 };
+    return stats;
+  }
 
-public int getXP() {
-  return this.xp;
-}
+  public double getXp() {
+    return this.xp;
+  }
 
-
-public static int clamp(int value, int min, int max) {
-  return Math.max(min, Math.min(value, max));
-}
+  public static int clamp(int value, int min, int max) {
+    return Math.max(min, Math.min(value, max));
+  }
 
 }

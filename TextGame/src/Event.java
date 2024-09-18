@@ -8,7 +8,7 @@
 // private String ID;
 // private List<Object> options;
 
-// Event(DatabaseManager db, GUI gui, String eventID, String text) {
+// public Event(DatabaseManager db, GUI gui, String eventID, String text) {
 //   this.db = db;
 //   this.gui = gui;
 //   this.ID = eventID;
