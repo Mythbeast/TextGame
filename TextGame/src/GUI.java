@@ -1,6 +1,5 @@
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.HashMap;
 
 import javafx.application.Application;
@@ -32,18 +31,43 @@ import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
 
 public class Gui extends Application {
+  // constants
+  private static final int WINDOW_WIDTH = 1400;
+  private static final int WINDOW_HEIGHT = 1000;
+  private static final int MAIN_TEXT_BOX_WIDTH = 600;
+  private static final int MAIN_TEXT_BOX_HEIGHT = 400;
+  private static final int PLAYER_HP_WIDTH = 1200;
+  private static final int PLAYER_HP_HEIGHT = 30;
+  private static final int MON_HP_WIDTH = 100;
+  private static final int MON_HP_HEIGHT = 30;
+  private static final int HP_CURVE = 15;
+  private static final int MENU_INFO_WIDTH = 500;
+  private static final int MENU_INFO_HEIGHT = 30;
+  private static final int BACKPACK_WIDTH = 900;
+  private static final int BACKPACK_HEIGHT = 250;
+  private static final int BACKPACK_COLS = 6;
+  private static final Insets DEFAUL_INSETS = new Insets(10, 10, 10, 10);
+  private static final int GRIDPANE_GAPS = 10;
+  private static final String BORDER_STYLE = "-fx-border-color: black; -fx-border-width: 2px;";
+
+  // core variables
   private static GameLogic game1;
   private Player player;
   private GridPane root = new GridPane();
+
   // variables used to manage areaSelect ComboBox
-  private ObservableList<String> discoveredAreas;
   private ArrayList<String> discoveredAreasArrayList;
+  private ObservableList<String> discoveredAreas;
   // variable for text output
   private TextFlow textBox = new TextFlow();
+  ScrollPane textScrollPane = new ScrollPane(textBox);
+  // variables for area select and explore
+  private Button exploreButton = new Button("Explore");
+  private ComboBox<String> areaSelect = new ComboBox<String>();
 
   // player Ui variables
   private GridPane playerUi = new GridPane();
-
+  // variables for managing player stats
   private IntegerProperty playerAttack;
   private IntegerProperty playerDefence;
   private IntegerProperty playerCritChance;
@@ -53,8 +77,9 @@ public class Gui extends Application {
   private DoubleProperty currentXp;
   private DoubleProperty xpForNextLevel;
   // variables for managing player HP bar and level
-  private IntegerProperty playerLevel;
+  private IntegerProperty playerLevel = intToIntegerProperty(0);
   private Rectangle playerHpBar = new Rectangle();
+  private Rectangle playerMissingHpBar = new Rectangle();
   private IntegerProperty playerCurrentHpVisible;
   private IntegerProperty playerMaxHpVisible;
   // equipment variables
@@ -71,7 +96,10 @@ public class Gui extends Application {
   private IntegerProperty playerItemDefence = intToIntegerProperty(0);
   private IntegerProperty playerItemCritChance = intToIntegerProperty(0);
   private IntegerProperty playerItemCritDamage = intToIntegerProperty(0);
-
+  // Labels to show player HP and level
+  private SimpleBindingIntegerLabel playerLevelLabel = new SimpleBindingIntegerLabel("Level: ", this.playerLevel, "");
+  private Label playerHpTextLabel = new Label();
+  private SimpleBindingIntegerLabel playerItemHpLabel = new SimpleBindingIntegerLabel("(", this.playerItemHp, ")");
   // monster Ui variables
   private GridPane monsterUi = new GridPane();
   private Label monsterName;
@@ -85,10 +113,8 @@ public class Gui extends Application {
   private IntegerProperty monsterCritDamage;
   private IntegerProperty monsterGold;
   private DoubleProperty monsterXp;
-
   // event Ui variables
   private GridPane eventUi = new GridPane();
-
   // menu Ui variables
   private GridPane menuUi = new GridPane();
   private Label menuInfoText;
@@ -109,28 +135,6 @@ public class Gui extends Application {
   private ScrollPane scrollableAreaStats = new ScrollPane(areaStatisticsPane);
   private ScrollPane scrollableRunStats = new ScrollPane(runStatisticsPane);
 
-  private static final int WINDOW_WIDTH = 1400;
-  private static final int WINDOW_HEIGHT = 1000;
-  private static final int MAIN_TEXT_BOX_WIDTH = 600;
-  private static final int MAIN_TEXT_BOX_HEIGHT = 400;
-  private static final int PLAYER_HP_WIDTH = 1200;
-  private static final int PLAYER_HP_HEIGHT = 30;
-  private static final int MON_HP_WIDTH = 100;
-  private static final int MON_HP_HEIGHT = 30;
-  private static final int HP_CURVE = 15;
-  private static final int MENU_INFO_WIDTH = 500;
-  private static final int MENU_INFO_HEIGHT = 30;
-  private static final int BACKPACK_WIDTH = 900;
-  private static final int BACKPACK_HEIGHT = 250;
-  private static final int BACKPACK_COLS = 6;
-  private static final Insets DEFAUL_INSETS = new Insets(10, 10, 10, 10);
-  private static final int GRIDPANE_GAPS = 10;
-  private static final String BORDER_STYLE = "-fx-border-color: black; -fx-border-width: 2px;";
-
-  public static void setGameLogic(GameLogic game) {
-    game1 = game;
-  }
-
   @Override
   public void start(Stage primaryStage) {
 
@@ -138,71 +142,18 @@ public class Gui extends Application {
     getPlayer(game1);
     getPlayerStats();
 
-    // layout manager
+    // main layout manager
     root.setHgap(GRIDPANE_GAPS);
     root.setVgap(GRIDPANE_GAPS);
     root.setPadding(DEFAUL_INSETS);
 
-    // Text box creation
-    textBox.setPrefSize(MAIN_TEXT_BOX_WIDTH, MAIN_TEXT_BOX_HEIGHT);
-    textBox.setStyle(BORDER_STYLE);
+    // Text box set up
+    setTextBox();
 
-    // create ScrollPane to ensure scrolling of text in textBox
-    ScrollPane scrollPane = new ScrollPane(textBox);
-    setScrollPane(scrollPane, textBox);
-
-    // create explore button
-    Button exploreButton = new Button("Explore");
-
-    // bind the button to the explore event
-    exploreButton.setOnAction(event -> {
-      game1.onExploreButton();
-    });
-
-    // create areaSelect combobox
-    this.discoveredAreasArrayList = (player.getDiscoveredAreaNames());
-    this.discoveredAreas = FXCollections.observableArrayList(discoveredAreasArrayList);
-    ComboBox<String> areaSelect = new ComboBox<String>(discoveredAreas);
-
-    // areaSelect.setItems(discoveredAreas);
-    areaSelect.getSelectionModel().selectFirst();
-
-    areaSelect.setOnAction(event -> {
-      // pass index of chosen area from discoveredAreas
-      String selectedArea = (String) areaSelect.getValue();
-      int index = discoveredAreas.indexOf(selectedArea);
-      game1.onAreaSelect(index);
-    });
-
-    // create label for playerLevel
-    SimpleBindingIntegerLabel playerLevelLabel = new SimpleBindingIntegerLabel("Level: ", this.playerLevel, "");
-
-    // create player HP label
-    Label playerHpTextLabel = new Label();
-    SimpleBindingIntegerLabel playerItemHpLabel = new SimpleBindingIntegerLabel("(", this.playerItemHp, ")");
-
-    // copy hp values to ObservableIntegerValue and bind to Label using
-    // StringBinding
-    this.playerCurrentHpVisible = intToIntegerProperty(game1.getPlayer().getCurrentHp());
-    this.playerMaxHpVisible = intToIntegerProperty(game1.getPlayer().getMaxHp());
-    StringBinding playerHpBinding = new StringBinding() {
-      {
-        super.bind(playerCurrentHpVisible, playerMaxHpVisible);
-      }
-
-      @Override
-      protected String computeValue() {
-        return playerCurrentHpVisible.get() + " / " + playerMaxHpVisible.get();
-      }
-    };
-    playerHpTextLabel.textProperty().bind(playerHpBinding);
-
-    // create player HP bar
-    setHpBar(playerHpBar, PLAYER_HP_HEIGHT, PLAYER_HP_WIDTH, Color.GREEN);
-
-    // Create red missing hp
-    Rectangle playerMissingHpBar = new Rectangle();
-    setHpBar(playerMissingHpBar, PLAYER_HP_HEIGHT, PLAYER_HP_WIDTH, Color.RED);
+    // sort several main UI elements
+    setScrollPane(textScrollPane, textBox);
+    setExploreAndAreaSelect();
+    setHpBarAndLevel();
 
     // player Ui section------------------------------------------------------
     // Create gridpane to contain player information
@@ -222,29 +173,8 @@ public class Gui extends Application {
     setGridPane(menuUi);
     createMenuUi();
 
-    // add items to window to row a col b
-    root.add(areaSelect, 1, 4);
-    root.add(exploreButton, 2, 4);
-    GridPane.setColumnSpan(scrollPane, 3);
-    root.add(scrollPane, 3, 3);
-    GridPane.setColumnSpan(playerMissingHpBar, 9);
-    GridPane.setRowSpan(playerMissingHpBar, 2);
-    root.add(playerMissingHpBar, 0, 0);
-    GridPane.setColumnSpan(playerHpBar, 9);
-    GridPane.setRowSpan(playerHpBar, 2);
-    root.add(playerHpBar, 0, 0);
-    root.add(playerLevelLabel, 9, 0);
-    root.add(playerHpTextLabel, 9, 1);
-    root.add(playerItemHpLabel, 10, 1);
-
-    GridPane.setColumnSpan(playerUi, 3);
-    root.add(playerUi, 0, 3);
-    GridPane.setColumnSpan(monsterUi, 3);
-    root.add(monsterUi, 8, 3);
-    GridPane.setColumnSpan(eventUi, 11);
-    root.add(eventUi, 0, 10);
-    GridPane.setColumnSpan(menuUi, 11);
-    root.add(menuUi, 0, 15);
+    // add all items to main window
+    addAllToWindow();
 
     // set the scene and show the window
     Scene scene = new Scene(root, WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -256,232 +186,8 @@ public class Gui extends Application {
 
   }
 
-  private void getPlayer(GameLogic game) {
-    this.player = game.getPlayer();
-  }
-
-  private void setAllMenuPanes() {
-    // set GridPane settings
-    setGridPane(this.backpackButtonBox);
-    setSubMenuSize(this.backpackButtonBox);
-    setGridPane(this.keyItemButtonBox);
-    setSubMenuSize(this.keyItemButtonBox);
-    setGridPane(this.statisticsPane);
-    setSubMenuSize(this.statisticsPane);
-    setGridPane(this.areaStatisticsPane);
-    setSubMenuSize(this.areaStatisticsPane);
-    setGridPane(this.runStatisticsPane);
-    setSubMenuSize(this.runStatisticsPane);
-
-    // set ScrollPane settings
-    setScrollPane(this.scrollableBackpack, this.backpackButtonBox);
-    setScrollPane(this.scrollablekeyItems, this.keyItemButtonBox);
-    setScrollPane(this.scrollableAreaStats, this.areaStatisticsPane);
-    setScrollPane(this.scrollableRunStats, this.runStatisticsPane);
-  }
-
-  private void setGridPane(GridPane gridpane) {
-    gridpane.setStyle(BORDER_STYLE);
-    gridpane.setVgap(GRIDPANE_GAPS);
-    gridpane.setHgap(GRIDPANE_GAPS);
-  }
-
-  private void setSubMenuSize(GridPane gridpane) {
-    gridpane.setPrefSize(BACKPACK_WIDTH, BACKPACK_HEIGHT);
-  }
-
-  private void setScrollPane(ScrollPane scrollpane, GridPane gridpane) {
-    scrollpane.setFitToWidth(true);
-    scrollpane.vvalueProperty().bind(gridpane.heightProperty());
-    scrollpane.setHbarPolicy(ScrollBarPolicy.NEVER);
-  }
-
-  private void setScrollPane(ScrollPane scrollpane, TextFlow textBox) {
-    scrollpane.setFitToWidth(true);
-    scrollpane.vvalueProperty().bind(textBox.heightProperty());
-    scrollpane.setHbarPolicy(ScrollBarPolicy.NEVER);
-  }
-
-  private void setHpBar(Rectangle rectangle, int height, int width, Color color) {
-    rectangle.setFill(color);
-    rectangle.setWidth(width);
-    rectangle.setHeight(height);
-    rectangle.setArcWidth(HP_CURVE);
-    rectangle.setArcHeight(HP_CURVE);
-  }
-
-  private void setSubMenu(GridPane topMenu, ScrollPane scrollpane) {
-    this.subMenu.getChildren().clear();
-    if (topMenu != null) {
-      this.subMenu.add(topMenu, 0, 0);
-    }
-    this.subMenu.add(scrollpane, 0, 1);
-  }
-
-  private void addAllToWindow() {
-
-  }
-
-  private void createMenuInfoTextLabel() {
-    this.menuInfoText = new Label("");
-    this.menuInfoText.setStyle(BORDER_STYLE);
-    this.menuInfoText.setPrefWidth(MENU_INFO_WIDTH);
-    this.menuInfoText.setPrefHeight(MENU_INFO_HEIGHT);
-    this.menuInfoText.setPadding(DEFAUL_INSETS);
-  }
-
-  private void createPlayerGridPane() {
-    GridPane playerStats = new GridPane();
-    Label playerStatsTitleLabel = new Label("Player Stats:");
-    SimpleBindingIntegerLabel playerAttackLabel = new SimpleBindingIntegerLabel("Attack: ", this.playerAttack, "");
-    SimpleBindingIntegerLabel playerDefenceLabel = new SimpleBindingIntegerLabel("Defence: ", this.playerDefence, "");
-    SimpleBindingIntegerLabel playerCritChanceLabel = new SimpleBindingIntegerLabel("Crit Chance: ",
-        this.playerCritChance, "");
-    SimpleBindingIntegerLabel playerCritDamageLabel = new SimpleBindingIntegerLabel("Bonus Crit Damage: ",
-        this.playerCritDamage, "");
-    SimpleBindingIntegerLabel playerGoldLabel = new SimpleBindingIntegerLabel("Gold: ", this.playerGold, "");
-
-    // create XP Label
-    Label playerXpLabel = new Label();
-    // copy xp values to ObservableIntegerValue and bind to Label using
-    // StringBinding
-    this.currentXp = doubleToDoubleProperty(this.player.getXp());
-    this.xpForNextLevel = doubleToDoubleProperty(this.player.getXpForNextLevel());
-    StringBinding playerXpBinding = new StringBinding() {
-      {
-        super.bind(currentXp, xpForNextLevel);
-      }
-
-      @Override
-      protected String computeValue() {
-        return "XP: " + currentXp.get() + " / " + xpForNextLevel.get();
-      }
-    };
-    playerXpLabel.textProperty().bind(playerXpBinding);
-
-    playerStats.add(playerStatsTitleLabel, 0, 0);
-    playerStats.add(playerAttackLabel, 0, 1);
-    playerStats.add(playerDefenceLabel, 0, 2);
-    playerStats.add(playerCritChanceLabel, 0, 3);
-    playerStats.add(playerCritDamageLabel, 0, 4);
-    playerStats.add(playerXpLabel, 0, 5);
-    playerStats.add(playerGoldLabel, 0, 6);
-
-    playerItemStats = new GridPane();
-    Label itemStatsTitleLabel = new Label("Item Stats:");
-    SimpleBindingIntegerLabel playerItemAttackLabel = new SimpleBindingIntegerLabel("(", this.playerItemAttack, ")");
-    SimpleBindingIntegerLabel playerItemDefenceLabel = new SimpleBindingIntegerLabel("(", this.playerItemDefence, ")");
-    SimpleBindingIntegerLabel playerItemCritChanceLabel = new SimpleBindingIntegerLabel("(", this.playerItemCritChance,
-        ")");
-    SimpleBindingIntegerLabel playerItemCritDamageLabel = new SimpleBindingIntegerLabel("(", this.playerItemCritDamage,
-        ")");
-
-    this.playerItemStats.add(itemStatsTitleLabel, 0, 0);
-    this.playerItemStats.add(playerItemAttackLabel, 0, 1);
-    this.playerItemStats.add(playerItemDefenceLabel, 0, 2);
-    this.playerItemStats.add(playerItemCritChanceLabel, 0, 3);
-    this.playerItemStats.add(playerItemCritDamageLabel, 0, 4);
-    for (int row = 0; row < 5; row++) {
-      GridPane.setHalignment(this.playerItemStats.getChildren().get(row), HPos.CENTER);
-    }
-
-    SimpleBindingStringLabel playerWeaponLabel = new SimpleBindingStringLabel("Weapon: ", this.playerWeapon, "");
-    SimpleBindingStringLabel playerShieldLabel = new SimpleBindingStringLabel("Shield: ", this.playerShield, "");
-    SimpleBindingStringLabel playerArmourLabel = new SimpleBindingStringLabel("Armour: ", this.playerArmour, "");
-    SimpleBindingStringLabel playerBootsLabel = new SimpleBindingStringLabel("Boots: ", this.playerBoots, "");
-    SimpleBindingStringLabel playerHelmetLabel = new SimpleBindingStringLabel("Helmet: ", this.playerHelmet, "");
-    SimpleBindingStringLabel playeRingLabel = new SimpleBindingStringLabel("Ring: ", this.playerRing, "");
-    playerEquipment.add(playerWeaponLabel, 0, 0);
-    playerEquipment.add(playerShieldLabel, 0, 1);
-    playerEquipment.add(playerArmourLabel, 0, 2);
-    playerEquipment.add(playerBootsLabel, 0, 3);
-    playerEquipment.add(playerHelmetLabel, 0, 4);
-    playerEquipment.add(playeRingLabel, 0, 5);
-
-    this.playerUi.add(playerStats, 0, 0);
-    this.playerUi.add(playerEquipment, 0, 1);
-    this.playerUi.add(playerItemStats, 1, 0);
-  }
-
-  private void createMonsterGridPane() {
-    // Create gridpane to contain monster information
-    setGridPane(monsterUi);
-
-    // create Label for monstername to be edited when a monster is created
-    this.monsterName = new Label();
-
-    // create monster HP bar
-    setHpBar(monsterHpBar, MON_HP_HEIGHT, MON_HP_WIDTH, Color.GREEN);
-    // Create red missing hp
-    setHpBar(monsterMissingHpBar, MON_HP_HEIGHT, MON_HP_WIDTH, Color.RED);
-
-    // add items to monsterUi
-    this.monsterUi.add(monsterName, 0, 0);
-
-    // called to set window to default state
-    removeMonster();
-  }
-
-  private void createMenuUi() {
-    this.menuUi.setPadding(DEFAUL_INSETS);
-
-    Button keyItemsButton = new Button("Key Items");
-    Button backpackButton = new Button("Backpack");
-    Button statisticsButton = new Button("Statistics");
-
-    createMenuInfoTextLabel();
-
-    this.subMenu = new GridPane();
-    // GridPane creation for backpack sub menu
-    this.backpackMenu = new GridPane();
-    Button equipButton = new Button("Equip");
-    equipButton.setOnAction(event -> {
-      if (activeEquipment != null) {
-        this.player.equip(activeEquipment);
-        newEquip(activeEquipment, activeEquipment.getType());
-        removeFromBackpack(activeEquipment);
-      }
-    });
-    backpackMenu.add(equipButton, 0, 0);
-
-    // Gridpane creation for statistics sub menu
-    Button areaStatsButton = new Button("Areas");
-    areaStatsButton.setOnAction(event -> {
-      this.subMenu.getChildren().clear();
-      this.subMenu.add(statisticsMenu, 0, 0);
-      this.subMenu.add(scrollableAreaStats, 0, 1);
-    });
-    Button runStatsButton = new Button("This run");
-    runStatsButton.setOnAction(event -> {
-      this.subMenu.getChildren().clear();
-      this.subMenu.add(statisticsMenu, 0, 0);
-      this.subMenu.add(scrollableRunStats, 0, 1);
-    });
-    statisticsMenu.add(areaStatsButton, 0, 0);
-    statisticsMenu.add(runStatsButton, 1, 0);
-
-    setAllMenuPanes();
-
-    this.menuUi.add(backpackButton, 0, 0);
-    this.menuUi.add(keyItemsButton, 1, 0);
-    this.menuUi.add(statisticsButton, 2, 0);
-    this.menuUi.add(menuInfoText, 5, 0);
-
-    GridPane.setColumnSpan(subMenu, 11);
-    this.menuUi.add(subMenu, 0, 1);
-
-    backpackButton.setOnAction(event -> {
-      setSubMenu(backpackMenu, scrollableBackpack);
-    });
-
-    keyItemsButton.setOnAction(event -> {
-      GridPane keyItemsMenu = null;
-      setSubMenu(keyItemsMenu, scrollablekeyItems);
-    });
-
-    statisticsButton.setOnAction(event -> {
-      setSubMenu(statisticsMenu, scrollableAreaStats);
-    });
+  public static void setGameLogic(GameLogic game) {
+    game1 = game;
   }
 
   public void playerGoldUpdate() {
@@ -489,6 +195,7 @@ public class Gui extends Application {
   }
 
   public void print(String string, Color colour, String style) {
+    // method used for all printing to the UI
     if (style == null) {
       style = "";
     }
@@ -527,12 +234,32 @@ public class Gui extends Application {
     print(startText, Color.BLACK, "italic");
   }
 
-  public void discoverArea(String areaName, String areaEncounterText) {
+  public void discoverArea(Area area, String areaEncounterText) {
+    String areaName = area.getName();
     discoveredAreas.add(areaName);
     printSpace();
     print(areaEncounterText, Color.BLACK, "italic");
     print("You have discovered the " + areaName + ".", Color.BLACK, "bold");
+    // -1 used as impossible index to be overwritten
+    createAreaStatLabel(area, -1);
+  }
 
+  public void updateArea(Area area) {
+    // TODO: use Observable variables and a StringBinding to do this more
+    // efficiently
+    // get which row in areaStatistics to update
+    int row = -1;
+    for (var label : areaStatisticsPane.getChildren()) {
+      if (((Label) label).getText().equals(area.getName())) {
+        row = areaStatisticsPane.getRowIndex(label);
+      }
+    }
+    // change the label to update area discovery
+    for (var label : areaStatisticsPane.getChildren()) {
+      if (GridPane.getColumnIndex(label) == 1 && GridPane.getRowIndex(label) == row) {
+        ((Label) label).setText(area.getNumberAreasDiscovered());
+      }
+    }
   }
 
   public void damageUpdate(String attacker, String defender, int damage, int critSuccess) {
@@ -549,16 +276,6 @@ public class Gui extends Application {
     }
   }
 
-  private void getPlayerStats() {
-    this.playerLevel = intToIntegerProperty(this.player.getLevel());
-    this.playerAttack = intToIntegerProperty(this.player.getAttack());
-    this.playerDefence = intToIntegerProperty(this.player.getDefence());
-    this.playerCritChance = intToIntegerProperty(this.player.getCritChance());
-    this.playerCritDamage = intToIntegerProperty(this.player.getCritDamage());
-    this.playerGold = intToIntegerProperty(this.player.getGold());
-
-  }
-
   public void playerCurrentHpUpdate() {
     this.playerCurrentHpVisible.set(player.getCurrentHp());
     double playerHpPercent = (double) this.playerCurrentHpVisible.get() / this.playerMaxHpVisible.get();
@@ -567,7 +284,7 @@ public class Gui extends Application {
 
   public void levelUp(int level, int newMaxHp) {
     print("Level Up!", Color.GOLDENROD, "bold");
-    print("You are now level " + level, Color.BLACK, null);
+    print("You are now level " + level, Color.BLACK, "bold");
     this.playerCurrentHpVisible.set(newMaxHp);
     this.playerMaxHpVisible.set(newMaxHp);
     this.playerHpBar.setWidth(PLAYER_HP_WIDTH);
@@ -685,17 +402,6 @@ public class Gui extends Application {
     backpackButtonBox.getChildren().removeIf(node -> ((Button) node).getText().equals(equipment.getName()));
   }
 
-  private String statString(HashMap<String, Integer> combatStats) {
-    // function to get String of all equipment stats
-    String statPrint = "";
-    for (HashMap.Entry<String, Integer> entry : combatStats.entrySet()) {
-      String stat = entry.getKey();
-      Integer value = entry.getValue();
-      statPrint = statPrint + stat + value + " ";
-    }
-    return statPrint;
-  }
-
   public void newMonster(Monster mon) {
     setMonsterStats(mon);
 
@@ -752,6 +458,389 @@ public class Gui extends Application {
     monsterUi.getChildren().removeIf(node -> GridPane.getColumnIndex(node) == 0 && GridPane.getRowIndex(node) == 2);
   }
 
+  public void removeEvent() {
+    for (int i = 0; i < 5; i++) {
+      final int column = i;
+      eventUi.getChildren()
+          .removeIf(node -> GridPane.getColumnIndex(node) == column && GridPane.getRowIndex(node) == 0);
+    }
+  }
+
+  public void newEventOption(int i, EventOption option) {
+    // function to create a button and bind to the correct event in GameLogic
+    Button optionButton = new Button((String) (option.getButtonText()));
+    optionButton.setOnAction(event -> {
+      game1.onOptionButton(option);
+    });
+    eventUi.add(optionButton, i, 0);
+  }
+
+  public void addEquipChoice(Equipment equipment) {
+    removeEvent();
+    game1.setEvent(true);
+    Button yesButton = new Button("Yes");
+    yesButton.setOnAction(event -> {
+      player.onEquipBoolean(true, equipment);
+      menuInfoText.setText("");
+      activeEquipment = null;
+    });
+    Button noButton = new Button("No");
+    noButton.setOnAction(event -> {
+      player.onEquipBoolean(false, equipment);
+    });
+    eventUi.add(yesButton, 0, 0);
+    eventUi.add(noButton, 1, 0);
+  }
+
+  private void getPlayer(GameLogic game) {
+    this.player = game.getPlayer();
+  }
+
+  private void setAllMenuPanes() {
+    // set GridPane settings
+    setGridPane(this.backpackButtonBox);
+    setSubMenuSize(this.backpackButtonBox);
+    setGridPane(this.keyItemButtonBox);
+    setSubMenuSize(this.keyItemButtonBox);
+    setGridPane(this.statisticsPane);
+    setSubMenuSize(this.statisticsPane);
+    setGridPane(this.areaStatisticsPane);
+    setSubMenuSize(this.areaStatisticsPane);
+    setGridPane(this.runStatisticsPane);
+    setSubMenuSize(this.runStatisticsPane);
+
+    // set ScrollPane settings
+    setScrollPane(this.scrollableBackpack, this.backpackButtonBox);
+    setScrollPane(this.scrollablekeyItems, this.keyItemButtonBox);
+    setScrollPane(this.scrollableAreaStats, this.areaStatisticsPane);
+    setScrollPane(this.scrollableRunStats, this.runStatisticsPane);
+  }
+
+  private void setGridPane(GridPane gridpane) {
+    gridpane.setStyle(BORDER_STYLE);
+    gridpane.setVgap(GRIDPANE_GAPS);
+    gridpane.setHgap(GRIDPANE_GAPS);
+  }
+
+  private void setSubMenuSize(GridPane gridpane) {
+    gridpane.setPrefSize(BACKPACK_WIDTH, BACKPACK_HEIGHT);
+  }
+
+  private void setTextBox() {
+    textBox.setPrefSize(MAIN_TEXT_BOX_WIDTH, MAIN_TEXT_BOX_HEIGHT);
+    textBox.setStyle(BORDER_STYLE);
+  }
+
+  private void setScrollPane(ScrollPane scrollpane, GridPane gridpane) {
+    scrollpane.setFitToWidth(true);
+    scrollpane.vvalueProperty().bind(gridpane.heightProperty());
+    scrollpane.setHbarPolicy(ScrollBarPolicy.NEVER);
+  }
+
+  private void setScrollPane(ScrollPane scrollpane, TextFlow textBox) {
+    scrollpane.setFitToWidth(true);
+    scrollpane.vvalueProperty().bind(textBox.heightProperty());
+    scrollpane.setHbarPolicy(ScrollBarPolicy.NEVER);
+  }
+
+  private void setHpBar(Rectangle rectangle, int height, int width, Color color) {
+    rectangle.setFill(color);
+    rectangle.setWidth(width);
+    rectangle.setHeight(height);
+    rectangle.setArcWidth(HP_CURVE);
+    rectangle.setArcHeight(HP_CURVE);
+  }
+
+  private void setSubMenu(GridPane topMenu, ScrollPane scrollpane) {
+    this.subMenu.getChildren().clear();
+    if (topMenu != null) {
+      this.subMenu.add(topMenu, 0, 0);
+    }
+    this.subMenu.add(scrollpane, 0, 1);
+  }
+
+  private void addAllToWindow() {
+    // add items to window to row a col b
+    root.add(areaSelect, 1, 4);
+    root.add(exploreButton, 2, 4);
+    GridPane.setColumnSpan(textScrollPane, 3);
+    root.add(textScrollPane, 3, 3);
+    GridPane.setColumnSpan(playerMissingHpBar, 9);
+    GridPane.setRowSpan(playerMissingHpBar, 2);
+    root.add(playerMissingHpBar, 0, 0);
+    GridPane.setColumnSpan(playerHpBar, 9);
+    GridPane.setRowSpan(playerHpBar, 2);
+    root.add(playerHpBar, 0, 0);
+    root.add(playerLevelLabel, 9, 0);
+    root.add(playerHpTextLabel, 9, 1);
+    root.add(playerItemHpLabel, 10, 1);
+
+    GridPane.setColumnSpan(playerUi, 3);
+    root.add(playerUi, 0, 3);
+    GridPane.setColumnSpan(monsterUi, 3);
+    root.add(monsterUi, 8, 3);
+    GridPane.setColumnSpan(eventUi, 11);
+    root.add(eventUi, 0, 10);
+    GridPane.setColumnSpan(menuUi, 11);
+    root.add(menuUi, 0, 15);
+  }
+
+  private void createMenuInfoTextLabel() {
+    this.menuInfoText = new Label("");
+    this.menuInfoText.setStyle(BORDER_STYLE);
+    this.menuInfoText.setPrefWidth(MENU_INFO_WIDTH);
+    this.menuInfoText.setPrefHeight(MENU_INFO_HEIGHT);
+    this.menuInfoText.setPadding(DEFAUL_INSETS);
+  }
+
+  private void createPlayerGridPane() {
+    GridPane playerStats = new GridPane();
+    Label playerStatsTitleLabel = new Label("Player Stats:");
+    SimpleBindingIntegerLabel playerAttackLabel = new SimpleBindingIntegerLabel("Attack: ", this.playerAttack, "");
+    SimpleBindingIntegerLabel playerDefenceLabel = new SimpleBindingIntegerLabel("Defence: ", this.playerDefence, "");
+    SimpleBindingIntegerLabel playerCritChanceLabel = new SimpleBindingIntegerLabel("Crit Chance: ",
+        this.playerCritChance, "");
+    SimpleBindingIntegerLabel playerCritDamageLabel = new SimpleBindingIntegerLabel("Bonus Crit Damage: ",
+        this.playerCritDamage, "");
+    SimpleBindingIntegerLabel playerGoldLabel = new SimpleBindingIntegerLabel("Gold: ", this.playerGold, "");
+
+    // create XP Label
+    Label playerXpLabel = new Label();
+    // copy xp values to ObservableIntegerValue and bind to Label using
+    // StringBinding
+    this.currentXp = doubleToDoubleProperty(this.player.getXp());
+    this.xpForNextLevel = doubleToDoubleProperty(this.player.getXpForNextLevel());
+    StringBinding playerXpBinding = new StringBinding() {
+      {
+        super.bind(currentXp, xpForNextLevel);
+      }
+
+      @Override
+      protected String computeValue() {
+        return "XP: " + currentXp.get() + " / " + xpForNextLevel.get();
+      }
+    };
+    playerXpLabel.textProperty().bind(playerXpBinding);
+
+    playerStats.add(playerStatsTitleLabel, 0, 0);
+    playerStats.add(playerAttackLabel, 0, 1);
+    playerStats.add(playerDefenceLabel, 0, 2);
+    playerStats.add(playerCritChanceLabel, 0, 3);
+    playerStats.add(playerCritDamageLabel, 0, 4);
+    playerStats.add(playerXpLabel, 0, 5);
+    playerStats.add(playerGoldLabel, 0, 6);
+
+    playerItemStats = new GridPane();
+    Label itemStatsTitleLabel = new Label("Item Stats:");
+    SimpleBindingIntegerLabel playerItemAttackLabel = new SimpleBindingIntegerLabel("(", this.playerItemAttack, ")");
+    SimpleBindingIntegerLabel playerItemDefenceLabel = new SimpleBindingIntegerLabel("(", this.playerItemDefence, ")");
+    SimpleBindingIntegerLabel playerItemCritChanceLabel = new SimpleBindingIntegerLabel("(", this.playerItemCritChance,
+        ")");
+    SimpleBindingIntegerLabel playerItemCritDamageLabel = new SimpleBindingIntegerLabel("(", this.playerItemCritDamage,
+        ")");
+
+    this.playerItemStats.add(itemStatsTitleLabel, 0, 0);
+    this.playerItemStats.add(playerItemAttackLabel, 0, 1);
+    this.playerItemStats.add(playerItemDefenceLabel, 0, 2);
+    this.playerItemStats.add(playerItemCritChanceLabel, 0, 3);
+    this.playerItemStats.add(playerItemCritDamageLabel, 0, 4);
+    for (int row = 0; row < 5; row++) {
+      GridPane.setHalignment(this.playerItemStats.getChildren().get(row), HPos.CENTER);
+    }
+
+    SimpleBindingStringLabel playerWeaponLabel = new SimpleBindingStringLabel("Weapon: ", this.playerWeapon, "");
+    SimpleBindingStringLabel playerShieldLabel = new SimpleBindingStringLabel("Shield: ", this.playerShield, "");
+    SimpleBindingStringLabel playerArmourLabel = new SimpleBindingStringLabel("Armour: ", this.playerArmour, "");
+    SimpleBindingStringLabel playerBootsLabel = new SimpleBindingStringLabel("Boots: ", this.playerBoots, "");
+    SimpleBindingStringLabel playerHelmetLabel = new SimpleBindingStringLabel("Helmet: ", this.playerHelmet, "");
+    SimpleBindingStringLabel playeRingLabel = new SimpleBindingStringLabel("Ring: ", this.playerRing, "");
+    playerEquipment.add(playerWeaponLabel, 0, 0);
+    playerEquipment.add(playerShieldLabel, 0, 1);
+    playerEquipment.add(playerArmourLabel, 0, 2);
+    playerEquipment.add(playerBootsLabel, 0, 3);
+    playerEquipment.add(playerHelmetLabel, 0, 4);
+    playerEquipment.add(playeRingLabel, 0, 5);
+
+    this.playerUi.add(playerStats, 0, 0);
+    this.playerUi.add(playerEquipment, 0, 1);
+    this.playerUi.add(playerItemStats, 1, 0);
+  }
+
+  private void setExploreAndAreaSelect() {
+    // bind the button to the explore event
+    exploreButton.setOnAction(event -> {
+      game1.onExploreButton();
+    });
+
+    // create list for areaSelect combobox
+    discoveredAreasArrayList = (player.getDiscoveredAreaNames());
+    discoveredAreas = FXCollections.observableArrayList(discoveredAreasArrayList);
+    areaSelect.setItems(discoveredAreas);
+
+    // add areas to the statistics page
+    setStartingAreaStats();
+
+    // choose initial value for the ComboBox
+    this.areaSelect.getSelectionModel().selectFirst();
+
+    // bind the ComboBox to choose areas in GameLogic
+    this.areaSelect.setOnAction(event -> {
+      // pass index of chosen area from discoveredAreas
+      String selectedArea = (String) areaSelect.getValue();
+      int index = discoveredAreas.indexOf(selectedArea);
+      game1.onAreaSelect(index);
+    });
+  }
+
+  private void setStartingAreaStats() {
+    ArrayList<Area> startingAreas = player.getDiscoveredAreas();
+    int i = 0;
+    for (Area area : startingAreas) {
+      createAreaStatLabel(area, i);
+      i += 1;
+    }
+  }
+
+  private void createAreaStatLabel(Area area, int row) {
+    // current row value is only used in setStartingAreaStats
+    Label areaLabel = new Label(area.getName());
+    Label areasDiscovered = new Label(area.getNumberAreasDiscovered());
+    // -1 used as impossible index to be overwritten in all other cases
+    if (row == -1) {
+      row = discoveredAreas.size();
+    }
+    areaStatisticsPane.add(areaLabel, 0, row);
+    areaStatisticsPane.add(areasDiscovered, 1, row);
+  }
+
+  private void setHpBarAndLevel() {
+    // copy hp values to ObservableIntegerValue and bind to Label using
+    // StringBinding
+    this.playerCurrentHpVisible = intToIntegerProperty(game1.getPlayer().getCurrentHp());
+    this.playerMaxHpVisible = intToIntegerProperty(game1.getPlayer().getMaxHp());
+    StringBinding playerHpBinding = new StringBinding() {
+      {
+        super.bind(playerCurrentHpVisible, playerMaxHpVisible);
+      }
+
+      @Override
+      protected String computeValue() {
+        return playerCurrentHpVisible.get() + " / " + playerMaxHpVisible.get();
+      }
+    };
+    playerHpTextLabel.textProperty().bind(playerHpBinding);
+
+    // create player HP bar
+    setHpBar(playerHpBar, PLAYER_HP_HEIGHT, PLAYER_HP_WIDTH, Color.GREEN);
+
+    // Create red missing hp
+    setHpBar(playerMissingHpBar, PLAYER_HP_HEIGHT, PLAYER_HP_WIDTH, Color.RED);
+  }
+
+  private void createMonsterGridPane() {
+    // Create gridpane to contain monster information
+    setGridPane(monsterUi);
+
+    // create Label for monstername to be edited when a monster is created
+    this.monsterName = new Label();
+
+    // create monster HP bar
+    setHpBar(monsterHpBar, MON_HP_HEIGHT, MON_HP_WIDTH, Color.GREEN);
+    // Create red missing hp
+    setHpBar(monsterMissingHpBar, MON_HP_HEIGHT, MON_HP_WIDTH, Color.RED);
+
+    // add items to monsterUi
+    this.monsterUi.add(monsterName, 0, 0);
+
+    // called to set window to default state
+    removeMonster();
+  }
+
+  private void createMenuUi() {
+    this.menuUi.setPadding(DEFAUL_INSETS);
+
+    Button keyItemsButton = new Button("Key Items");
+    Button backpackButton = new Button("Backpack");
+    Button statisticsButton = new Button("Statistics");
+
+    createMenuInfoTextLabel();
+
+    this.subMenu = new GridPane();
+    // GridPane creation for backpack sub menu
+    this.backpackMenu = new GridPane();
+    Button equipButton = new Button("Equip");
+    equipButton.setOnAction(event -> {
+      if (activeEquipment != null) {
+        this.player.equip(activeEquipment);
+        newEquip(activeEquipment, activeEquipment.getType());
+        removeFromBackpack(activeEquipment);
+        menuInfoText.setText("");
+      }
+    });
+    backpackMenu.add(equipButton, 0, 0);
+
+    // Gridpane creation for statistics sub menu
+    Button areaStatsButton = new Button("Areas");
+    areaStatsButton.setOnAction(event -> {
+      this.subMenu.getChildren().clear();
+      this.subMenu.add(statisticsMenu, 0, 0);
+      this.subMenu.add(scrollableAreaStats, 0, 1);
+    });
+    Button runStatsButton = new Button("This Run");
+    runStatsButton.setOnAction(event -> {
+      this.subMenu.getChildren().clear();
+      this.subMenu.add(statisticsMenu, 0, 0);
+      this.subMenu.add(scrollableRunStats, 0, 1);
+    });
+
+    statisticsMenu.add(areaStatsButton, 0, 0);
+    statisticsMenu.add(runStatsButton, 1, 0);
+
+    setAllMenuPanes();
+
+    this.menuUi.add(backpackButton, 0, 0);
+    this.menuUi.add(keyItemsButton, 1, 0);
+    this.menuUi.add(statisticsButton, 2, 0);
+    this.menuUi.add(menuInfoText, 5, 0);
+
+    GridPane.setColumnSpan(subMenu, 11);
+    this.menuUi.add(subMenu, 0, 1);
+
+    backpackButton.setOnAction(event -> {
+      setSubMenu(backpackMenu, scrollableBackpack);
+    });
+
+    keyItemsButton.setOnAction(event -> {
+      GridPane keyItemsMenu = null;
+      setSubMenu(keyItemsMenu, scrollablekeyItems);
+    });
+
+    statisticsButton.setOnAction(event -> {
+      setSubMenu(statisticsMenu, scrollableAreaStats);
+    });
+  }
+
+  private void getPlayerStats() {
+    this.playerLevel.set(this.player.getLevel());
+    this.playerAttack = intToIntegerProperty(this.player.getAttack());
+    this.playerDefence = intToIntegerProperty(this.player.getDefence());
+    this.playerCritChance = intToIntegerProperty(this.player.getCritChance());
+    this.playerCritDamage = intToIntegerProperty(this.player.getCritDamage());
+    this.playerGold = intToIntegerProperty(this.player.getGold());
+
+  }
+
+  private String statString(HashMap<String, Integer> combatStats) {
+    // function to get String of all equipment stats
+    String statPrint = "";
+    for (HashMap.Entry<String, Integer> entry : combatStats.entrySet()) {
+      String stat = entry.getKey();
+      Integer value = entry.getValue();
+      statPrint = statPrint + stat + value + "   ";
+    }
+    return statPrint;
+  }
+
   private void setMonsterStats(Monster mon) {
     // display name
     // normal label instead of a SimpleBindingStringLabel so it can be bound to
@@ -782,39 +871,6 @@ public class Gui extends Application {
     this.monsterCurrentHpVisible.set(Math.max(0, (this.monsterCurrentHpVisible.get() - damage)));
     double monsterHpPercent = (double) this.monsterCurrentHpVisible.get() / this.monsterMaxHpVisible.get();
     this.monsterHpBar.setWidth(MON_HP_WIDTH * monsterHpPercent);
-  }
-
-  public void removeEvent() {
-    for (int i = 0; i < 5; i++) {
-      final int column = i;
-      eventUi.getChildren()
-          .removeIf(node -> GridPane.getColumnIndex(node) == column && GridPane.getRowIndex(node) == 0);
-    }
-  }
-
-  public void newEventOption(int i, List<Object> option) {
-    // function to create a button and bind to the correct event in GameLogic
-    Button optionButton = new Button((String) (option.get(0)));
-    optionButton.setOnAction(event -> {
-      game1.onOptionButton(option);
-    });
-    eventUi.add(optionButton, i, 0);
-  }
-
-  public void addEquipChoice(Equipment equipment) {
-    removeEvent();
-    game1.setEvent(true);
-    Button yesButton = new Button("Yes");
-    yesButton.setOnAction(event -> {
-      player.onEquipBoolean(true, equipment);
-    });
-    Button noButton = new Button("No");
-    noButton.setOnAction(event -> {
-      player.onEquipBoolean(false, equipment);
-    });
-    eventUi.add(yesButton, 0, 0);
-    eventUi.add(noButton, 1, 0);
-
   }
 
   private IntegerProperty intToIntegerProperty(int value) {

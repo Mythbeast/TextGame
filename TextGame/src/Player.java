@@ -58,8 +58,8 @@ public class Player extends CombatEntity {
     this.discoveredAreaIds = new ArrayList<String>();
     this.discoveredAreas = new ArrayList<Area>();
     // add initially discovered areaIds
-    discoverArea("Gate");
-    discoverArea("Farm");
+    discoverArea("Gate", db.getArea("Gate"));
+    discoverArea("Farm", db.getArea("Farm"));
 
     // // test1:
     // discoverArea("VolH");
@@ -110,6 +110,10 @@ public class Player extends CombatEntity {
     return this.discoveredAreaNames;
   }
 
+  public ArrayList<Area> getDiscoveredAreas() {
+    return this.discoveredAreas;
+  }
+
   public void setCurrentArea(String areaId) {
     this.currentAreaId = areaId;
     int discoveryIndex = discoveredAreaIds.indexOf(areaId);
@@ -144,6 +148,25 @@ public class Player extends CombatEntity {
   public void gainXp(double amount) {
     this.xp += amount;
     levelCheck();
+  }
+
+  public boolean checkIfOwned(String itemId) {
+    // method to check whether an item is owned by the player
+    boolean owned = false;
+    // check if key item or equipment
+    if (db.keyItemCheck(itemId)) {
+      // check key items
+      KeyItem check = new KeyItem(db, itemId);
+      if (getKeyItems().contains(check))
+        owned = true;
+    } else {
+      // check backpack
+      Equipment check = new Equipment(db, itemId);
+      if (getBackpack().contains(check)) {
+        owned = true;
+      }
+    }
+    return owned;
   }
 
   private void addKeyItem(String keyItemId) {
@@ -305,6 +328,9 @@ public class Player extends CombatEntity {
     }
     this.equipmentList.add(equipment);
     this.itemStats = hashMapAdd(this.itemStats, equipment.getCombatStats());
+    gui.newEquip(equipment, equipment.getType());
+    gui.removeFromBackpack(equipment);
+
   }
 
   private void unequip(Equipment equipment, int index) {
@@ -338,17 +364,19 @@ public class Player extends CombatEntity {
     }
   }
 
-  public boolean discoverArea(String areaId) {
+  public boolean discoverArea(String newAreaId, Area newArea) {
     // if area has already been discovered, return false
-    if (discoveredAreaIds.contains(areaId)) {
+    if (discoveredAreaIds.contains(newAreaId)) {
       return false;
     }
     // else return true and create the area
     else {
-      Area area = new Area(this.db, areaId);
-      this.discoveredAreaIds.add(areaId);
-      this.discoveredAreas.add(area);
-      this.discoveredAreaNames.add(area.getName());
+      this.discoveredAreaIds.add(newAreaId);
+      this.discoveredAreas.add(newArea);
+      this.discoveredAreaNames.add(newArea.getName());
+      if (gui != null) {
+        gui.updateArea(newArea);
+      }
       return true;
     }
   }

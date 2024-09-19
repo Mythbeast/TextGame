@@ -44,7 +44,7 @@ public class GameLogic {
     }
   }
 
-  public void onOptionButton(List<Object> option) {
+  public void onOptionButton(EventOption option) {
     activateEventOption(option);
   }
 
@@ -122,18 +122,20 @@ public class GameLogic {
 
     // extract area ID
     List<Object> areaDetails = (ArrayList<Object>) (subsequentAreas.get(areaNumber));
-    String areaID = (String) areaDetails.get(0);
+    String newAreaId = (String) areaDetails.get(0);
+    Area newArea = db.getArea(newAreaId);
 
     // remove area from list to prevent rediscovery
     subsequentAreas.remove(areaNumber);
     area.setSubsequentAreas(subsequentAreas);
+    gui.updateArea(area);
 
     // check to see whether area had already been discovered from another location
-    boolean newArea = player.discoverArea(areaID);
+    boolean newAreaCheck = player.discoverArea(newAreaId, newArea);
 
     // if the area was not new to the player, search for a different new area
     // instead
-    if (!newArea) {
+    if (!newAreaCheck) {
       // find a new area if any exist or explore again
       chooseArea(area, player);
       return;
@@ -141,7 +143,7 @@ public class GameLogic {
     // extract area text and print
     String areaEncounterText = (String) areaDetails.get(2);
 
-    gui.discoverArea(db.getAreaName(areaID), areaEncounterText);
+    gui.discoverArea(newArea, areaEncounterText);
   }
 
   private void chooseMonster(Area area) {
@@ -198,52 +200,48 @@ public class GameLogic {
   }
 
   private void newEvent(String eventID) {
-    // each option is {text, cost, reqItemID, heal, goldPerHeal, itemGet, itemLose,
     // equip, eventText}
-    List<Object> eventOptions = db.getEventOptions(eventID);
+    List<EventOption> eventOptions = db.getEventOptions(eventID);
     int numOptions = eventOptions.size();
 
-    gui.print("\n Your choices: ", Color.BLACK, "bold");
+    gui.print("\n Your choices:", Color.BLACK, "bold");
 
     for (int i = 0; i <= numOptions - 1; i++) {
-      List<Object> option = (List<Object>) eventOptions.get(i);
-      String reqItem = (String) option.get(2);
+      // select each option of list
+      EventOption option = eventOptions.get(i);
+      // check whether option requires an item and whether the player has it
+      String reqItem = option.getReqItemId();
       if (reqItem != null) {
-        boolean owned = false;
-        if (db.keyItemCheck(reqItem)) {
-          KeyItem check = new KeyItem(db, reqItem);
-          if (player.getKeyItems().contains(check))
-            owned = true;
-        } else {
-          Equipment check = new Equipment(db, reqItem);
-          if (player.getBackpack().contains(check)) {
-            owned = true;
-          }
-        }
-
+        boolean owned = player.checkIfOwned(reqItem);
         if (owned) {
-          gui.print((String) option.get(9), Color.BLACK, "bold");
+          gui.print(option.getChoiceText(), Color.BLACK, "bold");
           this.gui.newEventOption(i, option);
         }
 
+        // option has no required item and therefore is an option
       } else {
-        gui.print((String) option.get(9), Color.BLACK, "bold");
+        gui.print((String) option.getChoiceText(), Color.BLACK, "bold");
         this.gui.newEventOption(i, option);
       }
     }
+    // add event flag so that explore button has a warning before discarding the
+    // event
     this.event = true;
-
   }
 
-  private void activateEventOption(List<Object> option) {
-    // TODO: does equip need to be an option?
-    // each option is {buttonText, cost, reqItemID, heal, goldPerHeal, itemGet,
-    // itemLose, equip, fight, choiceText, resultText}
-    int cost = (int) option.get(1);
-    String reqItemID = (String) option.get(2);
-    String itemLose = (String) option.get(6);
+  private void activateEventOption(EventOption option) {
+    // extract option variables
+    int cost = option.getGoldCost();
+    int maxHeal = option.getHeal();
+    int goldPerHeal = option.getGoldPerHeal();
+    String itemGet = option.getItemGet();
+    String itemLose = option.getItemLose();
+    String equip = option.getEquip();
+    String fight = option.getFight();
+    String resultText = option.getResultText();
 
-    // check option is possible
+    // check option is possible and if not, output to player that he doesn't have
+    // enough money (at end of method)
     if (this.player.getGold() >= cost) {
       // if option is chosen and valid, remove options from Gui
       gui.removeEvent();
@@ -251,10 +249,8 @@ public class GameLogic {
       this.player.gainGold(-cost);
 
       // code for GP based healing
-      int maxHeal = (int) option.get(3);
       if (maxHeal > 0) {
         int currentGold = this.player.getGold();
-        int goldPerHeal = (int) option.get(4);
         int missingHp = this.player.getMaxHp() - this.player.getCurrentHp();
         int maxCost = missingHp * goldPerHeal;
 
@@ -268,39 +264,41 @@ public class GameLogic {
           player.heal(heal);
           player.gainGold(-heal * goldPerHeal);
         }
-        // update HP
+        // update player Hp on GUI
         gui.playerCurrentHpUpdate();
       }
 
       // manage item changes
-      // TODO: create code for lose item
-      // this.player.loseItem(itemLose);
-
       // if new item is obtained
-      if (option.get(5) != null) {
-        findItem((String) option.get(5));
+      if (itemGet != null) {
+        findItem(itemGet);
       }
 
-      if (option.get(6) != null) {
-        player.removeItem((String) option.get(6));
+      if (itemLose != null) {
+        player.removeItem(itemLose);
       }
 
       // if player is forced to equip something
-      if ((String) option.get(7) != null) {
+      if (equip != null) {
         // TODO: add forceEquip code
       }
 
       // if player must fight
-      String fight = (String) option.get(8);
       if (fight != null) {
         newMonster(fight, null);
       }
-      String resultText = (String) option.get(10);
-      gui.print(resultText, Color.BLACK, null);
+
+      // if there is a resultText
+      if (resultText != null) {
+        gui.print(resultText, Color.BLACK, null);
+      }
+
+      // update Gui gold
       gui.playerGoldUpdate();
+      // clear event flags as event is over
       this.event = false;
       eventWarning = 0;
-
+      // if not enough money, print to textbox and do not clear event
     } else {
       gui.print("You do not have enough money for that", Color.BLACK, null);
     }

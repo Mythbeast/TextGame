@@ -1,4 +1,6 @@
 
+import static org.junit.Assert.assertThat;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -60,33 +62,29 @@ public class DatabaseManager {
     }
   }
 
-  public List<Object> getAreaInfo(String areaID) {
+  public Area getArea(String areaId) {
     // return List of column information of area
-    String sql = "SELECT areaName, areaChance, monsterChance, eventChance FROM Area WHERE areaID = ?";
+    String sql = "SELECT areaName, areaChance, monsterChance, eventChance FROM Area WHERE areaId = ?";
 
     try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
       // add in areaID to SQL query
-      pstmt.setString(1, areaID);
+      pstmt.setString(1, areaId);
 
       try (ResultSet rs = pstmt.executeQuery()) {
-        List<Object> result = new ArrayList<Object>();
 
-        // add information to result
-        if (rs.next()) {
-          result.add(rs.getString("areaName"));
-          result.add(rs.getInt("areaChance"));
-          result.add(rs.getInt("monsterChance"));
-          result.add(rs.getInt("eventChance"));
-        }
+        String name = rs.getString("areaName");
+        int areaChance = rs.getInt("areaChance");
+        int monsterChance = rs.getInt("monsterChance");
+        int eventChance = rs.getInt("eventChance");
 
-        return result;
+        return (new Area(this, areaId, name, areaChance, monsterChance, eventChance));
       }
     } catch (SQLException e) {
       System.out.println(e.getMessage());
       // unreachable unless error occurs
       System.out.println("Error: getAreaInfo error");
-      List<Object> errorList = new ArrayList<Object>();
-      return errorList;
+      Area errorArea = new Area(null, "", "", 0, 0, 0);
+      return errorArea;
     }
   }
 
@@ -250,7 +248,7 @@ public class DatabaseManager {
     }
   }
 
-  public List<Object> getEventOptions(String eventID) {
+  public List<EventOption> getEventOptions(String eventID) {
     String sql = "SELECT optionID FROM EventOptionIndex where eventID = ?";
     List<Object> optionIDs = new ArrayList<Object>();
 
@@ -264,7 +262,7 @@ public class DatabaseManager {
         }
       }
       // create list of option details and cycle through optionIDs adding details
-      List<Object> eventOptions = new ArrayList<>();
+      List<EventOption> eventOptions = new ArrayList<>();
       for (int i = 0; i <= optionIDs.size() - 1; i++) {
         eventOptions.add(getOptionInfo((String) optionIDs.get(i)));
       }
@@ -274,40 +272,42 @@ public class DatabaseManager {
       System.out.println(e.getMessage());
       // unreachable unless error occurs
       System.out.println("Error: getEventOptions error");
-      List<Object> errorList = new ArrayList<Object>();
+      List<EventOption> errorList = new ArrayList<EventOption>();
       return errorList;
     }
   }
 
-  public List<Object> getOptionInfo(String optionID) {
+  public EventOption getOptionInfo(String optionID) {
 
-    String sql = "SELECT optionText, goldCost, reqItemID, heal, goldPerHeal, itemGet, itemLose, equip, fight, eventText, resultText FROM EventOptions where optionID = ?";
+    String sql = "SELECT buttonText, choiceText, resultText, goldCost, heal, goldPerHeal, reqItemId, itemGet, itemLose, equip, fight FROM EventOptions where optionID = ?";
 
     try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
       // add in optionID to SQL query
       pstmt.setString(1, optionID);
       try (ResultSet rs = pstmt.executeQuery()) {
         List<Object> result = new ArrayList<>();
-        while (rs.next()) {
-          result.add(rs.getString("optionText"));
-          result.add(rs.getInt("goldCost"));
-          result.add(rs.getString("reqItemID"));
-          result.add(rs.getInt("heal"));
-          result.add(rs.getInt("goldPerHeal"));
-          result.add(rs.getString("itemGet"));
-          result.add(rs.getString("itemLose"));
-          result.add(rs.getString("equip"));
-          result.add(rs.getString("fight"));
-          result.add(rs.getString("eventText"));
-          result.add(rs.getString("resultText"));
-        }
-        return result;
+        // while (rs.next()) {
+        String buttonText = rs.getString("buttonText");
+        String choiceText = rs.getString("choiceText");
+        String resultText = rs.getString("resultText");
+        int goldCost = rs.getInt("goldCost");
+        int heal = rs.getInt("heal");
+        int goldPerHeal = rs.getInt("goldPerHeal");
+        String reqItemId = rs.getString("reqItemId");
+        String itemGet = rs.getString("itemGet");
+        String itemLose = rs.getString("itemLose");
+        String equip = rs.getString("equip");
+        String fight = rs.getString("fight");
+        // }
+        EventOption option = new EventOption(buttonText, choiceText, resultText, goldCost, heal, goldPerHeal, reqItemId,
+            itemGet, itemLose, equip, fight);
+        return option;
       }
     } catch (SQLException e) {
       System.out.println(e.getMessage());
       // unreachable unless error occurs
       System.out.println("Error: getOptionInfo error");
-      List<Object> errorList = new ArrayList<Object>();
+      EventOption errorList = new EventOption("", "", "", 0, 0, 0, "", "", "", "", "");
       return errorList;
     }
   }

@@ -21,11 +21,11 @@ public class CombatEntity extends AttackStats {
   }
 
   public void setCurrentHp(int hp) {
-    this.currentHp = clamp(hp, 0, this.maxHp);
+    this.currentHp = MathUtils.clamp(hp, 0, this.maxHp);
   }
 
   public void heal(int heal) {
-    this.currentHp = clamp(this.currentHp + heal, 0, this.maxHp);
+    this.currentHp = MathUtils.clamp(this.currentHp + heal, 0, this.maxHp);
   }
 
   public int getMaxHp() {
@@ -43,10 +43,6 @@ public class CombatEntity extends AttackStats {
 
   public double getXp() {
     return this.xp;
-  }
-
-  public static int clamp(int value, int min, int max) {
-    return Math.max(min, Math.min(value, max));
   }
 
 }

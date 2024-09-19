@@ -8,6 +8,9 @@ public class Area {
   private String ID;
   private String name;
   private List<Object> subsequentAreas;
+  private int totalSubsequentAreas;
+  private int discoveredAreas;
+  private String numberAreasDiscovered;
   private int[] areaWeights;
   private int[] areaWeightThresholds;
   private List<Object> monsterList;
@@ -26,15 +29,13 @@ public class Area {
   private int[] exploreChance;
   private Random rand = new Random();
 
-  public Area(DatabaseManager db, String areaID) {
+  public Area(DatabaseManager db, String areaID, String name, int areaChance, int monsterChance, int eventChance) {
     this.db = db;
     this.ID = areaID;
-
-    this.info = db.getAreaInfo(this.ID);
-    this.name = (String) info.get(0);
-    this.areaChance = (Integer) info.get(1);
-    this.monsterChance = (Integer) info.get(2);
-    this.eventChance = (Integer) info.get(3);
+    this.name = name;
+    this.areaChance = areaChance;
+    this.monsterChance = monsterChance;
+    this.eventChance = eventChance;
 
     // create array of thresholds for the random number
     // chances are being added so that when a random number is generated between 1
@@ -48,6 +49,9 @@ public class Area {
     this.createMonsterWeights();
     this.monsterWeightThresholds = this.createThresholds(monsterWeights);
     this.subsequentAreas = db.getAreaList(this.ID);
+    this.totalSubsequentAreas = subsequentAreas.size();
+    this.numberAreasDiscovered = discoveredAreas + " / " + totalSubsequentAreas;
+
     this.createAreaWeights();
     this.areaWeightThresholds = this.createThresholds(areaWeights);
     this.eventList = db.getEventList(this.ID);
@@ -76,8 +80,18 @@ public class Area {
     // method used to remove an area from the list and recreate weights and
     // thresholds
     this.subsequentAreas = areaList;
+    this.discoveredAreas = this.totalSubsequentAreas - areaList.size();
     this.createAreaWeights();
     this.areaWeightThresholds = this.createThresholds(areaWeights);
+  }
+
+  public String getNumberAreasDiscovered() {
+    this.numberAreasDiscovered = discoveredAreas + " / " + totalSubsequentAreas;
+    return this.numberAreasDiscovered;
+  }
+
+  public int remainingAreas() {
+    return this.subsequentAreas.size();
   }
 
   public int[] getMonsterWeightThresholds() {
