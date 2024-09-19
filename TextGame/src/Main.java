@@ -5,8 +5,8 @@ public class Main {
     DatabaseManager db = new DatabaseManager();
     GameLogic game1 = new GameLogic(db);
 
-    GUI.setGameLogic(game1);
-    GUI.launch(GUI.class, args);
+    Gui.setGameLogic(game1);
+    Gui.launch(Gui.class, args);
 
     // TODO: create classes for db returns to avoid casting
     // TODO: change main class to application

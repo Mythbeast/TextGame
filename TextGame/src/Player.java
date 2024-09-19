@@ -7,7 +7,7 @@ import javafx.scene.paint.Color;
 
 public class Player extends CombatEntity {
   private DatabaseManager db;
-  private GUI gui;
+  private Gui gui;
 
   // ArrayLists used as size is mutable
   // variable used to hold discovered non repeatable events
@@ -16,7 +16,7 @@ public class Player extends CombatEntity {
   private ArrayList<String> discoveredAreaIds;
   // variable used to hold entire Areas to avoid recreating each time
   private ArrayList<Area> discoveredAreas;
-  // variable used purely for GUI purposes
+  // variable used purely for Gui purposes
   private ArrayList<String> discoveredAreaNames;
 
   // variables used to explore
@@ -34,7 +34,7 @@ public class Player extends CombatEntity {
 
   private double xpForNextLevel;
 
-  public Player(DatabaseManager db, GUI gui) {
+  public Player(DatabaseManager db, Gui gui) {
     this.db = db;
     this.gui = gui;
     this.level = 1;
@@ -61,7 +61,7 @@ public class Player extends CombatEntity {
     discoverArea("Gate");
     discoverArea("Farm");
 
-    // test1:
+    // // test1:
     // discoverArea("VolH");
     // discoverArea("CryC");
     // discoverArea("IceC");
@@ -70,13 +70,15 @@ public class Player extends CombatEntity {
     // discoverArea("Isle");
     // discoverArea("Vict");
     // discoverArea("Clou");
+    // discoverArea("Drag");
     // this.xp = 50000000000000000000000000.0;
 
-    // test2:
+    // // test2:
     // addKeyItem("Genesis");
 
     this.currentAreaId = this.discoveredAreaIds.get(0);
     this.currentArea = this.discoveredAreas.get(0);
+    levelCheck();
   }
 
   // event handler
@@ -88,7 +90,7 @@ public class Player extends CombatEntity {
   }
 
   // getters and setters
-  public void setGUI(GUI gui) {
+  public void setGui(Gui gui) {
     this.gui = gui;
   }
 
@@ -141,16 +143,14 @@ public class Player extends CombatEntity {
 
   public void gainXp(double amount) {
     this.xp += amount;
-    while (this.xp >= this.xpForNextLevel) {
-      levelUp();
-    }
+    levelCheck();
   }
 
   private void addKeyItem(String keyItemId) {
     KeyItem keyItem = new KeyItem(this.db, keyItemId);
-    gui.print("You obtained the " + keyItem.getName() + "!", Color.BLACK, "");
+    gui.print("You obtained the " + keyItem.getName() + "!", Color.BLACK, "bold");
     if (keyItems.contains(keyItem)) {
-      gui.print("You already have this key item", Color.RED, "");
+      gui.print("You already have this key item", Color.RED, null);
       return;
     }
     if (keyItemId.contains("Shard")) {
@@ -168,7 +168,9 @@ public class Player extends CombatEntity {
   private void removeKeyItem(String keyItemId) {
     KeyItem keyItem = new KeyItem(this.db, keyItemId);
     if (keyItems.contains(keyItem)) {
-      keyItems.remove(keyItem);
+      // don't remove key item from player inventory so that events won't retrigger,
+      // but remove from UI
+      // keyItems.remove(keyItem);
       gui.removeFromKeyItems(keyItem);
     }
   }
@@ -199,7 +201,7 @@ public class Player extends CombatEntity {
     Equipment equipment = new Equipment(db, itemId);
     // check to see if equipment already obtained
     if (this.backpack.contains(equipment) || this.equipmentList.contains(equipment)) {
-      gui.print("You already have this item!", Color.BLACK, "");
+      gui.print("You already have this item!", Color.BLACK, null);
     } else {
       // if not owned, add to backpack and check if player would like to equip
       addToBackpack(equipment);
@@ -321,11 +323,19 @@ public class Player extends CombatEntity {
     this.critDamage = (int) stats.get(5);
   }
 
+  private void levelCheck() {
+    while (this.xp >= this.xpForNextLevel) {
+      levelUp();
+    }
+  }
+
   private void levelUp() {
     this.level += 1;
     loadPlayerStats(this.level);
     this.currentHp = this.maxHp;
-    gui.levelUp(this.level, this.maxHp);
+    if (this.gui != null) {
+      gui.levelUp(this.level, this.maxHp);
+    }
   }
 
   public boolean discoverArea(String areaId) {
@@ -415,7 +425,7 @@ public class Player extends CombatEntity {
     for (HashMap.Entry<String, Integer> entry : hashMap2.entrySet()) {
       String stat = entry.getKey();
       Integer value2 = entry.getValue();
-      Integer value1 = hashMap1.get(stat);
+      Integer value1 = hashMap1.getOrDefault(stat, 0);
       hashMap1.replace(stat, value1, value1 - value2);
     }
     return hashMap1;

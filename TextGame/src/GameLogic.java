@@ -9,7 +9,7 @@ import javafx.scene.paint.Color;
 
 public class GameLogic {
   Random rand = new Random();
-  private GUI gui;
+  private Gui gui;
   private DatabaseManager db;
   private Player player;
   private boolean combat;
@@ -34,6 +34,7 @@ public class GameLogic {
       eventWarning += 1;
     } else {
       gui.removeEvent();
+      eventWarning = 0;
       if (!combat) {
         Area area = player.getCurrentArea();
         explore(area);
@@ -55,6 +56,9 @@ public class GameLogic {
     if (areaID != player.getCurrentAreaId()) {
       // change current area
       player.setCurrentArea(areaID);
+      // reset event and combat in new area
+      event = false;
+      eventWarning = 0;
       combat = false;
       gui.removeMonster();
       gui.removeEvent();
@@ -70,9 +74,13 @@ public class GameLogic {
     this.player = player;
   }
 
-  public void setGUI(GUI gui) {
+  public void setGui(Gui gui) {
     this.gui = gui;
-    this.player.setGUI(gui);
+    this.player.setGui(gui);
+  }
+
+  public void setEvent(boolean bool) {
+    this.event = true;
   }
 
   private void explore(Area area) {
@@ -195,7 +203,7 @@ public class GameLogic {
     List<Object> eventOptions = db.getEventOptions(eventID);
     int numOptions = eventOptions.size();
 
-    gui.print("\n Your choices: ", Color.BLACK, null);
+    gui.print("\n Your choices: ", Color.BLACK, "bold");
 
     for (int i = 0; i <= numOptions - 1; i++) {
       List<Object> option = (List<Object>) eventOptions.get(i);
@@ -214,12 +222,12 @@ public class GameLogic {
         }
 
         if (owned) {
-          gui.print((String) option.get(9), Color.BLACK, null);
+          gui.print((String) option.get(9), Color.BLACK, "bold");
           this.gui.newEventOption(i, option);
         }
 
       } else {
-        gui.print((String) option.get(9), Color.BLACK, null);
+        gui.print((String) option.get(9), Color.BLACK, "bold");
         this.gui.newEventOption(i, option);
       }
     }
@@ -237,7 +245,7 @@ public class GameLogic {
 
     // check option is possible
     if (this.player.getGold() >= cost) {
-      // if option is chosen and valid, remove options from GUI
+      // if option is chosen and valid, remove options from Gui
       gui.removeEvent();
       // pay option cost
       this.player.gainGold(-cost);
@@ -274,7 +282,7 @@ public class GameLogic {
       }
 
       if (option.get(6) != null) {
-        // code for remove item
+        player.removeItem((String) option.get(6));
       }
 
       // if player is forced to equip something
@@ -340,7 +348,7 @@ public class GameLogic {
     int monsterCurrentHp = monster.getCurrentHp();
     int playerCurrentHp = player.getCurrentHp();
 
-    // output result to GUI
+    // output result to Gui
     gui.damageUpdate("You", monster.getName(), playerDamage, playerStats[6]);
     gui.damageUpdate(monster.getName(), "You", monsterDamage, monsterStats[6]);
 

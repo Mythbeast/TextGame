@@ -6,12 +6,12 @@ import javafx.scene.paint.Color;
 
 public class Monster extends CombatEntity {
   private DatabaseManager db;
-  private GUI gui;
+  private Gui gui;
   private String name;
   private String deathText;
   private HashMap<String, Integer> drops;
 
-  public Monster(DatabaseManager db, GUI gui, String monsterID) {
+  public Monster(DatabaseManager db, Gui gui, String monsterID) {
     this.db = db;
     this.gui = gui;
     List<Object> monsterInfo = db.getMonsterInfo(monsterID);
