@@ -1,19 +1,26 @@
-public class Main {
 
-  public static void main(String[] args) {
+import javafx.application.Application;
+import javafx.stage.Stage;
 
+public class Main extends Application {
+  private Gui gui;
+  private GameLogic game1;
+
+  @Override
+  public void start(Stage primaryStage) {
+    this.gui = new Gui(primaryStage);
     DatabaseManager db = new DatabaseManager();
-    GameLogic game1 = new GameLogic(db);
+    this.game1 = new GameLogic(db, gui);
 
-    Gui.setGameLogic(game1);
-    Gui.launch(Gui.class, args);
+    primaryStage.setTitle("TextGame");
+    primaryStage.show();
 
     // TODO: create classes for db returns to avoid casting
     // TODO: change main class to application
-    // TODO: mathutil class for things like clamp
-    // TODO: Write code that simplifies keyItems and Equipment and allows functions
-    // to work for both
+  }
 
+  public static void main(String[] args) {
+    launch(args);
   }
 
 }
