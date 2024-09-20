@@ -123,12 +123,11 @@ public class GameLogic {
     // extract area ID
     List<Object> areaDetails = (ArrayList<Object>) (subsequentAreas.get(areaNumber));
     String newAreaId = (String) areaDetails.get(0);
-    Area newArea = db.getArea(newAreaId);
+    Area newArea = db.getArea(newAreaId, player.getDiscoveredAreaIds());
 
     // remove area from list to prevent rediscovery
     subsequentAreas.remove(areaNumber);
     area.setSubsequentAreas(subsequentAreas);
-    gui.updateArea(area);
 
     // check to see whether area had already been discovered from another location
     boolean newAreaCheck = player.discoverArea(newAreaId, newArea);
@@ -142,8 +141,14 @@ public class GameLogic {
     }
     // extract area text and print
     String areaEncounterText = (String) areaDetails.get(2);
+    // list of all areas that connect to new area
+    ArrayList<String> allConnections = db.getPreviousAreaList(newAreaId);
+    for (String areaName : allConnections) {
+      gui.updateArea(areaName);
+    }
 
     gui.discoverArea(newArea, areaEncounterText);
+
   }
 
   private void chooseMonster(Area area) {

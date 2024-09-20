@@ -58,8 +58,8 @@ public class Player extends CombatEntity {
     this.discoveredAreaIds = new ArrayList<String>();
     this.discoveredAreas = new ArrayList<Area>();
     // add initially discovered areaIds
-    discoverArea("Gate", db.getArea("Gate"));
-    discoverArea("Farm", db.getArea("Farm"));
+    discoverArea("Gate", db.getArea("Gate", this.discoveredAreaIds));
+    discoverArea("Farm", db.getArea("Farm", this.discoveredAreaIds));
 
     // // test1:
     // discoverArea("VolH");
@@ -129,7 +129,7 @@ public class Player extends CombatEntity {
         this.itemStats.getOrDefault("Defence: ", 0),
         this.itemStats.getOrDefault("Crit Chance: ", 0),
         this.itemStats.getOrDefault("Crit Damage: ", 0) };
-    int[] stats = intArrayAdd(playerStats, itemCombatStats);
+    int[] stats = MathUtils.intArrayAdd(playerStats, itemCombatStats);
     return stats;
   }
 
@@ -283,14 +283,14 @@ public class Player extends CombatEntity {
           // if so, remove stats from itemstats and save index
           Equipment oldWeapon = equipmentList.get(i);
           oldStats = oldWeapon.getCombatStats();
-          this.itemStats = hashMapSubtract(this.itemStats, oldStats);
+          this.itemStats = MathUtils.hashMapSubtract(this.itemStats, oldStats);
           oldWeaponIndex = i;
         }
         if (equipmentList.get(i).getType().equals("shield")) {
           // if so, remove stats from itemstats and save index
           Equipment oldShield = equipmentList.get(i);
           oldStats = oldShield.getCombatStats();
-          this.itemStats = hashMapSubtract(this.itemStats, oldStats);
+          this.itemStats = MathUtils.hashMapSubtract(this.itemStats, oldStats);
           oldShieldIndex = i;
         }
       }
@@ -310,7 +310,7 @@ public class Player extends CombatEntity {
           // if so, remove stats from itemStats and remove equipment
           Equipment oldEquipment = equipmentList.get(i);
           HashMap<String, Integer> oldStats = oldEquipment.getCombatStats();
-          this.itemStats = hashMapSubtract(this.itemStats, oldStats);
+          this.itemStats = MathUtils.hashMapSubtract(this.itemStats, oldStats);
           unequip(oldEquipment, i);
           break;
         }
@@ -320,14 +320,14 @@ public class Player extends CombatEntity {
             // if so, remove stats from itemStats and remove equipment
             Equipment oldEquipment = equipmentList.get(i);
             HashMap<String, Integer> oldStats = oldEquipment.getCombatStats();
-            this.itemStats = hashMapSubtract(this.itemStats, oldStats);
+            this.itemStats = MathUtils.hashMapSubtract(this.itemStats, oldStats);
             unequip(oldEquipment, i);
           }
         }
       }
     }
     this.equipmentList.add(equipment);
-    this.itemStats = hashMapAdd(this.itemStats, equipment.getCombatStats());
+    this.itemStats = MathUtils.hashMapAdd(this.itemStats, equipment.getCombatStats());
     gui.newEquip(equipment, equipment.getType());
     gui.removeFromBackpack(equipment);
 
@@ -374,9 +374,9 @@ public class Player extends CombatEntity {
       this.discoveredAreaIds.add(newAreaId);
       this.discoveredAreas.add(newArea);
       this.discoveredAreaNames.add(newArea.getName());
-      if (gui != null) {
-        gui.updateArea(newArea);
-      }
+      // if (gui != null) {
+      // gui.updateArea(newArea);
+      // }
       return true;
     }
   }
@@ -446,35 +446,6 @@ public class Player extends CombatEntity {
     String victoryText = "As you obtain the last essence, the five elemental essences float gracefully into the air, they begin to swirl and merge, their individual energies intertwining in a mesmerizing dance of light and color. Fire’s fierce radiance, air’s delicate wisps, earth’s steadfast strength, water’s fluid clarity, and ice’s shimmering cold blend seamlessly together. The swirling amalgamation crystallizes into the Genesis Crystal, a breathtaking gem that pulses with the combined power of all elements, embodying the profound essence of creation.";
     gui.print(victoryText, Color.BLACK, "bold");
     gui.print("You have won the game!", Color.BLACK, "bold");
-  }
-
-  private HashMap<String, Integer> hashMapSubtract(HashMap<String, Integer> hashMap1,
-      HashMap<String, Integer> hashMap2) {
-    for (HashMap.Entry<String, Integer> entry : hashMap2.entrySet()) {
-      String stat = entry.getKey();
-      Integer value2 = entry.getValue();
-      Integer value1 = hashMap1.getOrDefault(stat, 0);
-      hashMap1.replace(stat, value1, value1 - value2);
-    }
-    return hashMap1;
-  }
-
-  private HashMap<String, Integer> hashMapAdd(HashMap<String, Integer> hashMap1, HashMap<String, Integer> hashMap2) {
-    for (HashMap.Entry<String, Integer> entry : hashMap2.entrySet()) {
-      String stat = entry.getKey();
-      Integer value2 = entry.getValue();
-      Integer value1 = hashMap1.getOrDefault(stat, 0);
-      hashMap1.replace(stat, value1, value1 + value2);
-    }
-    return hashMap1;
-  }
-
-  private int[] intArrayAdd(int[] array1, int[] array2) {
-    int[] result = new int[array1.length];
-    for (int i = 0; i < array1.length - 1; i++) {
-      result[i] = array1[i] + array2[i];
-    }
-    return result;
   }
 
 }

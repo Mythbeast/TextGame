@@ -244,20 +244,22 @@ public class Gui extends Application {
     createAreaStatLabel(area, -1);
   }
 
-  public void updateArea(Area area) {
+  public void updateArea(String areaName) {
     // TODO: use Observable variables and a StringBinding to do this more
     // efficiently
     // get which row in areaStatistics to update
     int row = -1;
     for (var label : areaStatisticsPane.getChildren()) {
-      if (((Label) label).getText().equals(area.getName())) {
-        row = areaStatisticsPane.getRowIndex(label);
+      if (((Label) label).getText().equals(areaName)) {
+        row = GridPane.getRowIndex(label);
       }
     }
     // change the label to update area discovery
     for (var label : areaStatisticsPane.getChildren()) {
       if (GridPane.getColumnIndex(label) == 1 && GridPane.getRowIndex(label) == row) {
-        ((Label) label).setText(area.getNumberAreasDiscovered());
+        String text = ((Label) label).getText();
+        String newText = incrementDiscoveries(text);
+        ((Label) label).setText(newText);
       }
     }
   }
@@ -678,6 +680,7 @@ public class Gui extends Application {
     areaSelect.setItems(discoveredAreas);
 
     // add areas to the statistics page
+    setAreaStatsTitle();
     setStartingAreaStats();
 
     // choose initial value for the ComboBox
@@ -692,9 +695,16 @@ public class Gui extends Application {
     });
   }
 
+  private void setAreaStatsTitle() {
+    Label areaStatsTitleLabel1 = new Label("Area");
+    Label areaStatsTitleLabel2 = new Label("Areas Discovered");
+    areaStatisticsPane.add(areaStatsTitleLabel1, 0, 0);
+    areaStatisticsPane.add(areaStatsTitleLabel2, 1, 0);
+  }
+
   private void setStartingAreaStats() {
     ArrayList<Area> startingAreas = player.getDiscoveredAreas();
-    int i = 0;
+    int i = 1;
     for (Area area : startingAreas) {
       createAreaStatLabel(area, i);
       i += 1;
@@ -707,7 +717,7 @@ public class Gui extends Application {
     Label areasDiscovered = new Label(area.getNumberAreasDiscovered());
     // -1 used as impossible index to be overwritten in all other cases
     if (row == -1) {
-      row = discoveredAreas.size();
+      row = discoveredAreas.size() + 1;
     }
     areaStatisticsPane.add(areaLabel, 0, row);
     areaStatisticsPane.add(areasDiscovered, 1, row);
@@ -887,6 +897,14 @@ public class Gui extends Application {
   private DoubleProperty doubleToDoubleProperty(double value) {
     DoubleProperty observableValue = new SimpleDoubleProperty(value);
     return observableValue;
+  }
+
+  private String incrementDiscoveries(String text) {
+    // used to add one to the number at the start of the string
+    int numberDiscovered = Character.getNumericValue(text.charAt(0));
+    numberDiscovered += 1;
+    String newText = numberDiscovered + text.substring(1);
+    return newText;
   }
 
 }

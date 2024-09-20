@@ -29,7 +29,10 @@ public class Area {
   private int[] exploreChance;
   private Random rand = new Random();
 
-  public Area(DatabaseManager db, String areaID, String name, int areaChance, int monsterChance, int eventChance) {
+  // TODO: on area creation, check for discovered areaIDs and remove from
+  // subsequent areas immediately.
+  public Area(DatabaseManager db, String areaID, String name, int areaChance, int monsterChance, int eventChance,
+      ArrayList<String> discoveredAreaIds) {
     this.db = db;
     this.ID = areaID;
     this.name = name;
@@ -49,7 +52,23 @@ public class Area {
     this.createMonsterWeights();
     this.monsterWeightThresholds = this.createThresholds(monsterWeights);
     this.subsequentAreas = db.getAreaList(this.ID);
+    // calculate total number of areas found from this one
     this.totalSubsequentAreas = subsequentAreas.size();
+    // remove any discovered areas from subsequentArea List
+    // use of subsequentAreaIdList to prevent concurrent modifcation exception
+    ArrayList<String> subsequentAreaIdList = new ArrayList<String>();
+    for (Object areaInfo : this.subsequentAreas) {
+      String areaId = (String) ((List<Object>) areaInfo).get(0);
+      subsequentAreaIdList.add(areaId);
+
+    }
+    // remove any subsequent areas that have already been discovered by the player
+    for (String id : discoveredAreaIds) {
+      this.subsequentAreas.removeIf(areaInfo -> ((List<Object>) areaInfo).get(0).equals(id));
+    }
+
+    // create String for areaStats Label
+    this.discoveredAreas = this.totalSubsequentAreas - subsequentAreas.size();
     this.numberAreasDiscovered = discoveredAreas + " / " + totalSubsequentAreas;
 
     this.createAreaWeights();

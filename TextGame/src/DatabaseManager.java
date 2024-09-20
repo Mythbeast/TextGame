@@ -62,7 +62,7 @@ public class DatabaseManager {
     }
   }
 
-  public Area getArea(String areaId) {
+  public Area getArea(String areaId, ArrayList<String> discoveredAreaIds) {
     // return List of column information of area
     String sql = "SELECT areaName, areaChance, monsterChance, eventChance FROM Area WHERE areaId = ?";
 
@@ -77,13 +77,13 @@ public class DatabaseManager {
         int monsterChance = rs.getInt("monsterChance");
         int eventChance = rs.getInt("eventChance");
 
-        return (new Area(this, areaId, name, areaChance, monsterChance, eventChance));
+        return (new Area(this, areaId, name, areaChance, monsterChance, eventChance, discoveredAreaIds));
       }
     } catch (SQLException e) {
       System.out.println(e.getMessage());
       // unreachable unless error occurs
       System.out.println("Error: getAreaInfo error");
-      Area errorArea = new Area(null, "", "", 0, 0, 0);
+      Area errorArea = new Area(null, "", "", 0, 0, 0, new ArrayList<>());
       return errorArea;
     }
   }
@@ -115,6 +115,31 @@ public class DatabaseManager {
     }
   }
 
+  public ArrayList<String> getPreviousAreaList(String nextAreaId) {
+    // returns list of all area names that connect to nextAreaId
+    String sql = "SELECT areaID FROM areaConnections where connectedAreaId = ?";
+
+    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+      // add in monsterID to SQL query
+      pstmt.setString(1, nextAreaId);
+      try (ResultSet rs = pstmt.executeQuery()) {
+        ArrayList<String> result = new ArrayList<String>();
+
+        while (rs.next()) {
+          String areaId = rs.getString("areaId");
+          result.add(getAreaName(areaId));
+        }
+        return result;
+      }
+    } catch (SQLException e) {
+      System.out.println(e.getMessage());
+      // unreachable unless error occurs
+      System.out.println("Error: getAreaList error");
+      ArrayList<String> errorList = new ArrayList<String>();
+      return errorList;
+    }
+  }
+
   public String getAreaName(String areaID) {
     String sql = "SELECT areaName FROM Area WHERE areaID = ?";
 
@@ -138,7 +163,7 @@ public class DatabaseManager {
   }
 
   public List<Object> getMonsterInfo(String monsterID) {
-    String sql = "SELECT monsterName, level, xp, maxHP, attack, defence, critChance, critDamage, gold, deathText FROM Monster WHERE monsterID = ?";
+    String sql = "SELECT monsterName, level, xp, maxHP, attack, defence, critChance, critDamage, gold, deathText FROM MonsterStats WHERE monsterID = ?";
 
     try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
       // add in monsterID to SQL query
