@@ -1,10 +1,8 @@
 import java.util.List;
-import java.util.Random;
 import java.util.ArrayList;
 
 public class Area {
   private DatabaseManager db;
-  private List<Object> info;
   private String ID;
   private String name;
   private List<Object> subsequentAreas;
@@ -27,10 +25,7 @@ public class Area {
   // on explore
   // specific event is then located afterwards
   private int[] exploreChance;
-  private Random rand = new Random();
 
-  // TODO: on area creation, check for discovered areaIDs and remove from
-  // subsequent areas immediately.
   public Area(DatabaseManager db, String areaID, String name, int areaChance, int monsterChance, int eventChance,
       ArrayList<String> discoveredAreaIds) {
     this.db = db;
@@ -48,10 +43,12 @@ public class Area {
     if (this.exploreChance[3] != 100) {
       System.out.println("Error: Area chances are invalid.");
     }
-    this.monsterList = db.getMonsterList(this.ID);
+    this.monsterList = this.db.getMonsterList(this.ID);
     this.createMonsterWeights();
     this.monsterWeightThresholds = this.createThresholds(monsterWeights);
-    this.subsequentAreas = db.getAreaList(this.ID);
+    this.subsequentAreas = this.db.getAreaList(this.ID);
+
+    // code to calculate area stats in statistics panel
     // calculate total number of areas found from this one
     this.totalSubsequentAreas = subsequentAreas.size();
     // remove any discovered areas from subsequentArea List
@@ -60,13 +57,11 @@ public class Area {
     for (Object areaInfo : this.subsequentAreas) {
       String areaId = (String) ((List<Object>) areaInfo).get(0);
       subsequentAreaIdList.add(areaId);
-
     }
     // remove any subsequent areas that have already been discovered by the player
     for (String id : discoveredAreaIds) {
       this.subsequentAreas.removeIf(areaInfo -> ((List<Object>) areaInfo).get(0).equals(id));
     }
-
     // create String for areaStats Label
     this.discoveredAreas = this.totalSubsequentAreas - subsequentAreas.size();
     this.numberAreasDiscovered = discoveredAreas + " / " + totalSubsequentAreas;

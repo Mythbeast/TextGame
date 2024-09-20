@@ -2,7 +2,6 @@
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import javafx.application.Application;
 import javafx.beans.binding.StringBinding;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
@@ -30,7 +29,7 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
 
-public class Gui extends Application {
+public class Gui {
   // constants
   private static final int WINDOW_WIDTH = 1400;
   private static final int WINDOW_HEIGHT = 1000;
@@ -53,6 +52,7 @@ public class Gui extends Application {
   // core variables
   private static GameLogic game1;
   private Player player;
+  private Stage stage;
   private GridPane root = new GridPane();
 
   // variables used to manage areaSelect ComboBox
@@ -135,12 +135,8 @@ public class Gui extends Application {
   private ScrollPane scrollableAreaStats = new ScrollPane(areaStatisticsPane);
   private ScrollPane scrollableRunStats = new ScrollPane(runStatisticsPane);
 
-  @Override
-  public void start(Stage primaryStage) {
-
-    game1.setGui(this);
-    getPlayer(game1);
-    getPlayerStats();
+  public Gui(Stage primaryStage) {
+    this.stage = primaryStage;
 
     // main layout manager
     root.setHgap(GRIDPANE_GAPS);
@@ -152,13 +148,6 @@ public class Gui extends Application {
 
     // sort several main UI elements
     setScrollPane(textScrollPane, textBox);
-    setExploreAndAreaSelect();
-    setHpBarAndLevel();
-
-    // player Ui section------------------------------------------------------
-    // Create gridpane to contain player information
-    setGridPane(playerUi);
-    createPlayerGridPane();
 
     // Monster Ui section-----------------------------------------------------
     createMonsterGridPane();
@@ -188,6 +177,34 @@ public class Gui extends Application {
 
   public static void setGameLogic(GameLogic game) {
     game1 = game;
+  }
+
+  public void setPlayer(Player player) {
+    this.player = player;
+  }
+
+  public void setPlayerGui() {
+    getPlayerStats();
+
+    // create list for areaSelect combobox
+    discoveredAreasArrayList = (player.getDiscoveredAreaNames());
+    discoveredAreas = FXCollections.observableArrayList(discoveredAreasArrayList);
+    areaSelect.setItems(discoveredAreas);
+
+    // add areas to the statistics page
+    setAreaStatsTitle();
+    setStartingAreaStats();
+
+    setExploreAndAreaSelect();
+    setHpBarAndLevel();
+
+    // player Ui section------------------------------------------------------
+    // Create gridpane to contain player information
+    setGridPane(playerUi);
+    createPlayerGridPane();
+
+    // called to set window to default state
+    removeMonster();
   }
 
   public void playerGoldUpdate() {
@@ -674,15 +691,6 @@ public class Gui extends Application {
       game1.onExploreButton();
     });
 
-    // create list for areaSelect combobox
-    discoveredAreasArrayList = (player.getDiscoveredAreaNames());
-    discoveredAreas = FXCollections.observableArrayList(discoveredAreasArrayList);
-    areaSelect.setItems(discoveredAreas);
-
-    // add areas to the statistics page
-    setAreaStatsTitle();
-    setStartingAreaStats();
-
     // choose initial value for the ComboBox
     this.areaSelect.getSelectionModel().selectFirst();
 
@@ -761,9 +769,6 @@ public class Gui extends Application {
 
     // add items to monsterUi
     this.monsterUi.add(monsterName, 0, 0);
-
-    // called to set window to default state
-    removeMonster();
   }
 
   private void createMenuUi() {

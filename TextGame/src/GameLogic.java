@@ -17,8 +17,10 @@ public class GameLogic {
   private boolean event = false;
   private int eventWarning = 0;
 
-  public GameLogic(DatabaseManager db) {
+  public GameLogic(DatabaseManager db, Gui gui) {
     this.db = db;
+    this.gui = gui;
+    Gui.setGameLogic(this);
     newGame();
 
     // while (player.getCurrentHP()>0 & monster.getCurrentHP() >0) {
@@ -35,6 +37,7 @@ public class GameLogic {
     } else {
       gui.removeEvent();
       eventWarning = 0;
+      player.saveGame();
       if (!combat) {
         Area area = player.getCurrentArea();
         explore(area);
@@ -70,13 +73,11 @@ public class GameLogic {
   }
 
   private void newGame() {
-    Player player = new Player(db, gui);
-    this.player = player;
-  }
-
-  public void setGui(Gui gui) {
-    this.gui = gui;
-    this.player.setGui(gui);
+    this.player = db.loadSave(0, gui);
+    // ensure that the new save does not overwrite any old save game if new game
+    player.setSaveNumber(db.howManySaves() + 1);
+    gui.setPlayer(player);
+    player.guiSetUp();
   }
 
   public void setEvent(boolean bool) {

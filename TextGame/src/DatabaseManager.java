@@ -1,6 +1,4 @@
 
-import static org.junit.Assert.assertThat;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -18,19 +16,6 @@ public class DatabaseManager {
 
   public DatabaseManager() {
     this.conn = connect();
-  }
-
-  private Connection connect() {
-    // connect to database
-    Connection conn = null;
-
-    try {
-      conn = DriverManager.getConnection(location);
-    } catch (SQLException e) {
-      System.out.println(e.getMessage());
-      e.printStackTrace();
-    }
-    return conn;
   }
 
   public ArrayList<Object> getPlayerStats(int level) {
@@ -422,7 +407,7 @@ public class DatabaseManager {
     String sql = "SELECT reqItem, stopRepeat FROM Event where eventID = ?";
 
     try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-      // add in itemID to SQL query
+      // add in eventId to SQL query
       pstmt.setString(1, eventId);
       ArrayList<String> result = new ArrayList<>();
       try (ResultSet rs = pstmt.executeQuery()) {
@@ -439,6 +424,175 @@ public class DatabaseManager {
       ArrayList<String> errorList = new ArrayList<String>();
       return errorList;
     }
+  }
+
+  public void saveGame(int saveNumber, double xp, int gold, ArrayList<String> discoveredAreasIds,
+      ArrayList<Equipment> currentEquipment, ArrayList<Equipment> backpack, ArrayList<KeyItem> keyItems,
+      ArrayList<String> discoveredEventIds) {
+
+    deleteSave(saveNumber);
+
+    saveStat(saveNumber, "keyValue", "gold", gold);
+    saveStat(saveNumber, "keyValue", "xp", xp);
+    for (String areaId : discoveredAreasIds) {
+      saveStat(saveNumber, "area", areaId, 1);
+    }
+    for (String eventId : discoveredEventIds) {
+      saveStat(saveNumber, "event", eventId, 1);
+    }
+    for (Equipment equipment : currentEquipment) {
+      String equipId = equipment.getId();
+      saveStat(saveNumber, "currentEquipment", equipId, 1);
+    }
+    for (Equipment equipment : backpack) {
+      String equipId = equipment.getId();
+      saveStat(saveNumber, "backpack", equipId, 1);
+    }
+    for (KeyItem key : keyItems) {
+      String keyId = key.getId();
+      saveStat(saveNumber, "keyItem", keyId, 1);
+    }
+  }
+
+  public Player loadSave(int saveNumber, Gui gui) {
+    String sql = "SELECT ArrayListName, String, Value FROM SavedGame WHERE saveNumber = ?";
+
+    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+      // add in saveNumber to SQL query
+      pstmt.setInt(1, saveNumber);
+      // create variables to hold save info
+      ArrayList<String> areaIds = new ArrayList<>();
+      ArrayList<String> eventIds = new ArrayList<>();
+      ArrayList<String> currentEquipment = new ArrayList<>();
+      ArrayList<String> backpack = new ArrayList<>();
+      ArrayList<String> keyItems = new ArrayList<>();
+      int gold = 0;
+      double xp = 0;
+      // populate variables
+      try (ResultSet rs = pstmt.executeQuery()) {
+        while (rs.next()) {
+          String type = rs.getString("ArrayListName");
+          switch (type) {
+            case "keyValue":
+              if (rs.getString("String").equals("gold")) {
+                gold = rs.getInt("value");
+              }
+              if (rs.getString("String").equals("xp")) {
+                xp = rs.getDouble("value");
+              }
+              areaIds.add(rs.getString("String"));
+              break;
+            case "area":
+              areaIds.add(rs.getString("String"));
+              break;
+            case "event":
+              eventIds.add(rs.getString("String"));
+              break;
+            case "currentEquipment":
+              currentEquipment.add(rs.getString("String"));
+              break;
+            case "backpack":
+              backpack.add(rs.getString("String"));
+              break;
+            case "keyItem":
+              keyItems.add(rs.getString("String"));
+              break;
+          }
+
+        }
+        return new Player(this, gui, saveNumber, gold, xp, areaIds, eventIds, currentEquipment, backpack, keyItems);
+      }
+    } catch (SQLException e) {
+      System.out.println(e.getMessage());
+      System.out.println("Error: loadSave error");
+      return new Player(null, gui, saveNumber, saveNumber, saveNumber, null, null, null, null, null);
+    }
+  }
+
+  public void deleteSave(int saveNumber) {
+    String sql = "DELETE FROM SavedGame WHERE saveNumber = ?";
+
+    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+      // add in saveNumber to SQL query
+      pstmt.setInt(1, saveNumber);
+
+      pstmt.executeUpdate();
+
+    } catch (SQLException e) {
+      System.out.println(e.getMessage());
+      System.out.println("Error: removeSave error");
+    }
+  }
+
+  public int howManySaves() {
+    String sql = "SELECT MAX(SaveNumber) FROM SavedGame";
+    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+      try (ResultSet rs = pstmt.executeQuery()) {
+        if (rs.next()) {
+          return rs.getInt(1);
+        }
+
+      }
+
+    } catch (SQLException e) {
+      System.out.println(e.getMessage());
+      System.out.println("Error: howManySaves error");
+      return -1;
+    }
+    System.out.println("Error: howManySaves error");
+    return -2;
+  }
+
+  private Connection connect() {
+    // connect to database
+    Connection conn = null;
+
+    try {
+      conn = DriverManager.getConnection(location);
+    } catch (SQLException e) {
+      System.out.println(e.getMessage());
+      e.printStackTrace();
+    }
+    return conn;
+  }
+
+  private void saveStat(int saveNumber, String ArrayListName, String text, int value) {
+    String sql = "INSERT INTO SavedGame (SaveNumber, ArrayListName, Value, String) VALUES(?, ?, ?, ?)";
+
+    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+      // add in values to SQL query
+      pstmt.setInt(1, saveNumber);
+      pstmt.setString(2, ArrayListName);
+      pstmt.setString(3, text);
+      pstmt.setInt(4, value);
+
+      pstmt.executeUpdate();
+
+    } catch (SQLException e) {
+      System.out.println(e.getMessage());
+      System.out.println("Error: saveGame error");
+    }
+
+  }
+
+  private void saveStat(int saveNumber, String ArrayListName, String text, double value) {
+    String sql = "INSERT INTO SavedGame (SaveNumber, ArrayListName, Value, String) VALUES(?, ?, ?, ?)";
+
+    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+      // add in values to SQL query
+      pstmt.setInt(1, saveNumber);
+      pstmt.setString(2, ArrayListName);
+      pstmt.setString(3, text);
+      pstmt.setDouble(4, value);
+
+      pstmt.executeUpdate();
+
+    } catch (SQLException e) {
+      System.out.println(e.getMessage());
+      System.out.println("Error: saveGame error");
+    }
+
   }
 
 }

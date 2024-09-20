@@ -6,6 +6,7 @@ import javafx.scene.paint.Color;
 // TODO: create private backpack/key item functions that handle both
 
 public class Player extends CombatEntity {
+  private int saveNumber = 1;
   private DatabaseManager db;
   private Gui gui;
 
@@ -15,36 +16,35 @@ public class Player extends CombatEntity {
   // variable used to hold areaIds for discover checks and quick indexing
   private ArrayList<String> discoveredAreaIds;
   // variable used to hold entire Areas to avoid recreating each time
-  private ArrayList<Area> discoveredAreas;
+  private ArrayList<Area> discoveredAreas = new ArrayList<Area>();
   // variable used purely for Gui purposes
-  private ArrayList<String> discoveredAreaNames;
+  private ArrayList<String> discoveredAreaNames = new ArrayList<String>();
 
   // variables used to explore
   private String currentAreaId;
   private Area currentArea;
 
   // equipment is {Weapon, Shield, ...}
-  private ArrayList<Equipment> equipmentList;
+  private ArrayList<Equipment> currentEquipment = new ArrayList<Equipment>();
   // itemStats are HP, attack, defence, critChance and critDamage
-  private ArrayList<Equipment> backpack;
-  private ArrayList<KeyItem> keyItems;
+  private ArrayList<Equipment> backpack = new ArrayList<Equipment>();
+  private ArrayList<KeyItem> keyItems = new ArrayList<KeyItem>();
   private int shards = 0;
 
   private HashMap<String, Integer> itemStats;
 
   private double xpForNextLevel;
 
-  public Player(DatabaseManager db, Gui gui) {
+  public Player(DatabaseManager db, Gui gui, int saveNumber, int gold, double xp, ArrayList<String> areaIds,
+      ArrayList<String> eventIds, ArrayList<String> currentEquipment, ArrayList<String> backpack,
+      ArrayList<String> keyItems) {
+
     this.db = db;
     this.gui = gui;
-    this.level = 1;
-    this.xp = 0;
-    this.gold = 500;
-    loadPlayerStats(this.level);
-    this.currentHp = this.maxHp;
-    this.keyItems = new ArrayList<>();
-    this.equipmentList = new ArrayList();
-    this.backpack = new ArrayList<>();
+    this.xp = xp;
+    this.gold = gold;
+    this.discoveredAreaIds = areaIds;
+    this.discoveredEventIds = eventIds;
     this.itemStats = new HashMap<>();
     this.itemStats.put("HP: ", 0);
     this.itemStats.put("Attack: ", 0);
@@ -52,14 +52,48 @@ public class Player extends CombatEntity {
     this.itemStats.put("Crit Chance: ", 0);
     this.itemStats.put("Crit Damage: ", 0);
 
-    this.discoveredEventIds = new ArrayList<String>();
+    initialLevelCheck();
+    loadPlayerStats(this.level);
+    this.currentHp = this.maxHp;
 
-    this.discoveredAreaNames = new ArrayList<String>();
-    this.discoveredAreaIds = new ArrayList<String>();
-    this.discoveredAreas = new ArrayList<Area>();
-    // add initially discovered areaIds
-    discoverArea("Gate", db.getArea("Gate", this.discoveredAreaIds));
-    discoverArea("Farm", db.getArea("Farm", this.discoveredAreaIds));
+    for (String equipId : currentEquipment) {
+      Equipment equipment = new Equipment(db, equipId);
+      equip(equipment);
+    }
+
+    for (String equipId : backpack) {
+      Equipment equipment = new Equipment(db, equipId);
+      addToBackpack(equipment);
+    }
+
+    for (String key : keyItems) {
+      addKeyItem(key);
+    }
+
+  }
+
+  public void setSaveNumber(int number) {
+    this.saveNumber = number;
+  }
+
+  public void saveGame() {
+    db.saveGame(this.saveNumber, this.xp, this.gold, this.discoveredAreaIds, this.currentEquipment, this.backpack,
+        this.keyItems, this.discoveredEventIds);
+  }
+
+  public void guiSetUp() {
+    for (Equipment equipment : currentEquipment) {
+      gui.newEquip(equipment, equipment.getType());
+    }
+
+    for (Equipment equipment : backpack) {
+      gui.addToBackpack(equipment);
+    }
+    gui.ItemStatUpdate();
+
+    for (KeyItem item : keyItems) {
+      gui.addToKeyItems(item);
+    }
 
     // // test1:
     // discoverArea("VolH");
@@ -72,13 +106,20 @@ public class Player extends CombatEntity {
     // discoverArea("Clou");
     // discoverArea("Drag");
     // this.xp = 50000000000000000000000000.0;
+    // levelCheck();
 
     // // test2:
     // addKeyItem("Genesis");
 
+    // add initially discovered areaIds
+    discoverArea("Gate", db.getArea("Gate", this.discoveredAreaIds));
+    discoverArea("Farm", db.getArea("Farm", this.discoveredAreaIds));
+
     this.currentAreaId = this.discoveredAreaIds.get(0);
     this.currentArea = this.discoveredAreas.get(0);
     levelCheck();
+
+    gui.setPlayerGui();
   }
 
   // event handler
@@ -169,6 +210,130 @@ public class Player extends CombatEntity {
     return owned;
   }
 
+  public ArrayList<KeyItem> getKeyItems() {
+    return this.keyItems;
+  }
+
+  public ArrayList<Equipment> getEquipmentList() {
+    return this.currentEquipment;
+  }
+
+  public ArrayList<Equipment> getBackpack() {
+    return this.backpack;
+  }
+
+  public void addItem(String itemId) {
+    // check to see if item is a key item or equipment
+    if (db.keyItemCheck(itemId)) {
+      addKeyItem(itemId);
+    } else {
+      // check whether to equip immediately
+      equipCheck(itemId);
+    }
+  }
+
+  public void removeItem(String itemId) {
+    // check to see if item is a key item or equipment
+    if (db.keyItemCheck(itemId)) {
+      removeKeyItem(itemId);
+    } else {
+      removeEquipment(itemId);
+    }
+  }
+
+  public void addToBackpack(Equipment equipment) {
+    // add item to backpack and UI
+    this.backpack.add(equipment);
+    gui.addToBackpack(equipment);
+  }
+
+  private void removeEquipment(String itemId) {
+    Equipment equipment = new Equipment(db, itemId);
+    if (this.backpack.contains(equipment)) {
+      backpack.remove(equipment);
+    }
+    if (this.currentEquipment.contains(equipment)) {
+      currentEquipment.remove(equipment);
+    }
+    gui.removeFromBackpack(equipment);
+  }
+
+  public void equip(Equipment equipment) {
+    // TODO: condense terrible duplicated code
+    String type = equipment.getType();
+
+    // if item was in backpack, remove it
+    if (this.backpack.contains(equipment)) {
+      backpack.remove(equipment);
+    }
+
+    // messy code due to the size of currentEquipment changing when an item is
+    // removed
+    // if 2Handed weapon - iterate through currentEquipment and check for weapons
+    // and
+    // shields
+    if (type.equals("weapon2")) {
+      HashMap<String, Integer> oldStats;
+      // variables used to hold index to avoid removing during for loop, -1 used so
+      // that all indices are greater
+      int oldWeaponIndex = -1;
+      int oldShieldIndex = -1;
+      for (int i = 0; i < currentEquipment.size(); i++) {
+        // .contains used to get weapon1 and weapon2
+        if (currentEquipment.get(i).getType().contains("weapon")) {
+          // if so, remove stats from itemstats and save index
+          Equipment oldWeapon = currentEquipment.get(i);
+          oldStats = oldWeapon.getCombatStats();
+          this.itemStats = MathUtils.hashMapSubtract(this.itemStats, oldStats);
+          oldWeaponIndex = i;
+        }
+        if (currentEquipment.get(i).getType().equals("shield")) {
+          // if so, remove stats from itemstats and save index
+          Equipment oldShield = currentEquipment.get(i);
+          oldStats = oldShield.getCombatStats();
+          this.itemStats = MathUtils.hashMapSubtract(this.itemStats, oldStats);
+          oldShieldIndex = i;
+        }
+      }
+      // remove highest index first to avoid second index changing
+      int higherIndex = Math.max(oldWeaponIndex, oldShieldIndex);
+      int lowerIndex = Math.min(oldWeaponIndex, oldShieldIndex);
+      if (higherIndex >= 0) {
+        unequip(this.currentEquipment.get(higherIndex), higherIndex);
+      }
+      if (lowerIndex >= 0) {
+        unequip(this.currentEquipment.get(lowerIndex), lowerIndex);
+      }
+    } else {
+      // for all non 2H weapon, find index of old equipment and remove
+      for (int i = 0; i < currentEquipment.size(); i++) {
+        if (currentEquipment.get(i).getType().equals(type)) {
+          // if so, remove stats from itemStats and remove equipment
+          Equipment oldEquipment = currentEquipment.get(i);
+          HashMap<String, Integer> oldStats = oldEquipment.getCombatStats();
+          this.itemStats = MathUtils.hashMapSubtract(this.itemStats, oldStats);
+          unequip(oldEquipment, i);
+          break;
+        }
+        // case where player has a 2H weapon and wants to swap it for a shield
+        if (type.equals("shield")) {
+          if (currentEquipment.get(i).getType().equals("weapon2")) {
+            // if so, remove stats from itemStats and remove equipment
+            Equipment oldEquipment = currentEquipment.get(i);
+            HashMap<String, Integer> oldStats = oldEquipment.getCombatStats();
+            this.itemStats = MathUtils.hashMapSubtract(this.itemStats, oldStats);
+            unequip(oldEquipment, i);
+          }
+        }
+      }
+    }
+    this.currentEquipment.add(equipment);
+    this.itemStats = MathUtils.hashMapAdd(this.itemStats, equipment.getCombatStats());
+    gui.newEquip(equipment, equipment.getType());
+    gui.removeFromBackpack(equipment);
+
+  }
+
   private void addKeyItem(String keyItemId) {
     KeyItem keyItem = new KeyItem(this.db, keyItemId);
     gui.print("You obtained the " + keyItem.getName() + "!", Color.BLACK, "bold");
@@ -198,32 +363,10 @@ public class Player extends CombatEntity {
     }
   }
 
-  public ArrayList<KeyItem> getKeyItems() {
-    return this.keyItems;
-  }
-
-  public ArrayList<Equipment> getEquipmentList() {
-    return this.equipmentList;
-  }
-
-  public ArrayList<Equipment> getBackpack() {
-    return this.backpack;
-  }
-
-  public void addItem(String itemId) {
-    // check to see if item is a key item or equipment
-    if (db.keyItemCheck(itemId)) {
-      addKeyItem(itemId);
-    } else {
-      // check whether to equip immediately
-      equipCheck(itemId);
-    }
-  }
-
   private void equipCheck(String itemId) {
     Equipment equipment = new Equipment(db, itemId);
     // check to see if equipment already obtained
-    if (this.backpack.contains(equipment) || this.equipmentList.contains(equipment)) {
+    if (this.backpack.contains(equipment) || this.currentEquipment.contains(equipment)) {
       gui.print("You already have this item!", Color.BLACK, null);
     } else {
       // if not owned, add to backpack and check if player would like to equip
@@ -233,108 +376,8 @@ public class Player extends CombatEntity {
 
   }
 
-  public void removeItem(String itemId) {
-    // check to see if item is a key item or equipment
-    if (db.keyItemCheck(itemId)) {
-      removeKeyItem(itemId);
-    } else {
-      removeEquipment(itemId);
-    }
-  }
-
-  public void addToBackpack(Equipment equipment) {
-    // add item to backpack and UI
-    this.backpack.add(equipment);
-    gui.addToBackpack(equipment);
-  }
-
-  private void removeEquipment(String itemId) {
-    Equipment equipment = new Equipment(db, itemId);
-    if (this.backpack.contains(equipment)) {
-      backpack.remove(equipment);
-    }
-    if (this.equipmentList.contains(equipment)) {
-      equipmentList.remove(equipment);
-    }
-    gui.removeFromBackpack(equipment);
-  }
-
-  public void equip(Equipment equipment) {
-    // TODO: condense terrible duplicated code
-    String type = equipment.getType();
-
-    // if item was in backpack, remove it
-    if (this.backpack.contains(equipment)) {
-      backpack.remove(equipment);
-    }
-
-    // messy code due to the size of equipmentList changing when an item is removed
-    // if 2Handed weapon - iterate through equipmentList and check for weapons and
-    // shields
-    if (type.equals("weapon2")) {
-      HashMap<String, Integer> oldStats;
-      // variables used to hold index to avoid removing during for loop, -1 used so
-      // that all indices are greater
-      int oldWeaponIndex = -1;
-      int oldShieldIndex = -1;
-      for (int i = 0; i < equipmentList.size(); i++) {
-        // .contains used to get weapon1 and weapon2
-        if (equipmentList.get(i).getType().contains("weapon")) {
-          // if so, remove stats from itemstats and save index
-          Equipment oldWeapon = equipmentList.get(i);
-          oldStats = oldWeapon.getCombatStats();
-          this.itemStats = MathUtils.hashMapSubtract(this.itemStats, oldStats);
-          oldWeaponIndex = i;
-        }
-        if (equipmentList.get(i).getType().equals("shield")) {
-          // if so, remove stats from itemstats and save index
-          Equipment oldShield = equipmentList.get(i);
-          oldStats = oldShield.getCombatStats();
-          this.itemStats = MathUtils.hashMapSubtract(this.itemStats, oldStats);
-          oldShieldIndex = i;
-        }
-      }
-      // remove highest index first to avoid second index changing
-      int higherIndex = Math.max(oldWeaponIndex, oldShieldIndex);
-      int lowerIndex = Math.min(oldWeaponIndex, oldShieldIndex);
-      if (higherIndex >= 0) {
-        unequip(this.equipmentList.get(higherIndex), higherIndex);
-      }
-      if (lowerIndex >= 0) {
-        unequip(this.equipmentList.get(lowerIndex), lowerIndex);
-      }
-    } else {
-      // for all non 2H weapon, find index of old equipment and remove
-      for (int i = 0; i < equipmentList.size(); i++) {
-        if (equipmentList.get(i).getType().equals(type)) {
-          // if so, remove stats from itemStats and remove equipment
-          Equipment oldEquipment = equipmentList.get(i);
-          HashMap<String, Integer> oldStats = oldEquipment.getCombatStats();
-          this.itemStats = MathUtils.hashMapSubtract(this.itemStats, oldStats);
-          unequip(oldEquipment, i);
-          break;
-        }
-        // case where player has a 2H weapon and wants to swap it for a shield
-        if (type.equals("shield")) {
-          if (equipmentList.get(i).getType().equals("weapon2")) {
-            // if so, remove stats from itemStats and remove equipment
-            Equipment oldEquipment = equipmentList.get(i);
-            HashMap<String, Integer> oldStats = oldEquipment.getCombatStats();
-            this.itemStats = MathUtils.hashMapSubtract(this.itemStats, oldStats);
-            unequip(oldEquipment, i);
-          }
-        }
-      }
-    }
-    this.equipmentList.add(equipment);
-    this.itemStats = MathUtils.hashMapAdd(this.itemStats, equipment.getCombatStats());
-    gui.newEquip(equipment, equipment.getType());
-    gui.removeFromBackpack(equipment);
-
-  }
-
   private void unequip(Equipment equipment, int index) {
-    this.equipmentList.remove(index);
+    this.currentEquipment.remove(index);
     addToBackpack(equipment);
   }
 
@@ -347,6 +390,14 @@ public class Player extends CombatEntity {
     this.defence = (int) stats.get(3);
     this.critChance = (int) stats.get(4);
     this.critDamage = (int) stats.get(5);
+  }
+
+  private void initialLevelCheck() {
+    while (this.xp >= this.xpForNextLevel) {
+      this.level += 1;
+      loadPlayerStats(this.level);
+      this.currentHp = this.maxHp;
+    }
   }
 
   private void levelCheck() {
@@ -403,12 +454,6 @@ public class Player extends CombatEntity {
       }
     }
 
-    // if (stopRepeat != null) {
-    // if (this.keyItems.contains(reqItem) || this.backpack.contains(reqItem)) {
-    // return false;
-    // }
-    // }
-
     // if the event requires an item and the player does not have it, return false
     // and do not activate the event
     if (reqItem != null) {
@@ -427,19 +472,16 @@ public class Player extends CombatEntity {
     }
     // if event is not repeatable and has already been discovered, return false and
     // do not activate the event
-    if (discoveredEventIds.contains(eventId)) {
+    if (repeatable == 0 && discoveredEventIds.contains(eventId)) {
       return false;
     }
-    // if event is not repeatable and new, discover it and activate the event
-    if (repeatable == 0) {
+    // if event is new, add to discoveredEventIds
+    if (!discoveredEventIds.contains(eventId)) {
+
       discoveredEventIds.add(eventId);
-      return true;
     }
-    // if event is repeatable
-    if (repeatable == 1) {
-      return true;
-    }
-    return false;
+    // if event can happen, activate the event
+    return true;
   }
 
   private void victory() {
