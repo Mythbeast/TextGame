@@ -6,6 +6,9 @@ import javafx.scene.paint.Color;
 // TODO: create private backpack/key item functions that handle both
 
 public class Player extends CombatEntity {
+  // used to arrange set up
+  boolean intro = true;
+
   private int saveNumber = 1;
   private DatabaseManager db;
   private Gui gui;
@@ -24,7 +27,9 @@ public class Player extends CombatEntity {
   private String currentAreaId;
   private Area currentArea;
 
-  // equipment is {Weapon, Shield, ...}
+  private ArrayList<String> startingEquipment;
+  private ArrayList<String> startingBackpack;
+  private ArrayList<String> startingKeyItems;
   private ArrayList<Equipment> currentEquipment = new ArrayList<Equipment>();
   // itemStats are HP, attack, defence, critChance and critDamage
   private ArrayList<Equipment> backpack = new ArrayList<Equipment>();
@@ -35,13 +40,14 @@ public class Player extends CombatEntity {
 
   private double xpForNextLevel;
 
-  public Player(DatabaseManager db, Gui gui, int saveNumber, int gold, double xp, ArrayList<String> areaIds,
+  public Player(DatabaseManager db, Gui gui, int saveNumber, int gold, int level, double xp, ArrayList<String> areaIds,
       ArrayList<String> eventIds, ArrayList<String> currentEquipment, ArrayList<String> backpack,
       ArrayList<String> keyItems) {
-
+    this.intro = true;
     this.db = db;
     this.gui = gui;
     this.xp = xp;
+    this.level = level;
     this.gold = gold;
     this.discoveredAreaIds = areaIds;
     this.discoveredEventIds = eventIds;
@@ -52,23 +58,13 @@ public class Player extends CombatEntity {
     this.itemStats.put("Crit Chance: ", 0);
     this.itemStats.put("Crit Damage: ", 0);
 
+    this.startingEquipment = currentEquipment;
+    this.startingBackpack = backpack;
+    this.startingKeyItems = keyItems;
+
     initialLevelCheck();
     loadPlayerStats(this.level);
     this.currentHp = this.maxHp;
-
-    for (String equipId : currentEquipment) {
-      Equipment equipment = new Equipment(db, equipId);
-      equip(equipment);
-    }
-
-    for (String equipId : backpack) {
-      Equipment equipment = new Equipment(db, equipId);
-      addToBackpack(equipment);
-    }
-
-    for (String key : keyItems) {
-      addKeyItem(key);
-    }
 
   }
 
@@ -77,49 +73,52 @@ public class Player extends CombatEntity {
   }
 
   public void saveGame() {
-    db.saveGame(this.saveNumber, this.xp, this.gold, this.discoveredAreaIds, this.currentEquipment, this.backpack,
+    db.saveGame(this.saveNumber, this.level, this.xp, this.gold, this.discoveredAreaIds, this.currentEquipment,
+        this.backpack,
         this.keyItems, this.discoveredEventIds);
   }
 
-  public void guiSetUp() {
-    for (Equipment equipment : currentEquipment) {
-      gui.newEquip(equipment, equipment.getType());
+  public void setEquipment() {
+    for (String equipId : startingEquipment) {
+      Equipment equipment = new Equipment(db, equipId);
+      equip(equipment);
     }
 
-    for (Equipment equipment : backpack) {
-      gui.addToBackpack(equipment);
+    for (String equipId : startingBackpack) {
+      Equipment equipment = new Equipment(db, equipId);
+      addToBackpack(equipment);
     }
+
+    for (String key : startingKeyItems) {
+      addKeyItem(key);
+    }
+  }
+
+  public void guiSetUp() {
     gui.ItemStatUpdate();
 
-    for (KeyItem item : keyItems) {
-      gui.addToKeyItems(item);
-    }
-
     // // test1:
-    // discoverArea("VolH");
-    // discoverArea("CryC");
-    // discoverArea("IceC");
-    // discoverArea("Trog");
-    // discoverArea("Prim");
-    // discoverArea("Isle");
-    // discoverArea("Vict");
-    // discoverArea("Clou");
-    // discoverArea("Drag");
-    // this.xp = 50000000000000000000000000.0;
-    // levelCheck();
+    // discoveredAreaIds.add("VolH");
+    // discoveredAreaIds.add("CryC");
+    // discoveredAreaIds.add("IceC");
+    // discoveredAreaIds.add("Trog");
+    // discoveredAreaIds.add("Prim");
+    // discoveredAreaIds.add("Isle");
+    // discoveredAreaIds.add("Vict");
+    // discoveredAreaIds.add("Clou");
+    // discoveredAreaIds.add("Drag");
+    // this.xp = 500000000000000.0;
 
     // // test2:
     // addKeyItem("Genesis");
 
-    // add initially discovered areaIds
-    discoverArea("Gate", db.getArea("Gate", this.discoveredAreaIds));
-    discoverArea("Farm", db.getArea("Farm", this.discoveredAreaIds));
-
+    updateDiscoveredAreas();
     this.currentAreaId = this.discoveredAreaIds.get(0);
     this.currentArea = this.discoveredAreas.get(0);
     levelCheck();
 
     gui.setPlayerGui();
+    this.intro = false;
   }
 
   // event handler
@@ -331,7 +330,85 @@ public class Player extends CombatEntity {
     this.itemStats = MathUtils.hashMapAdd(this.itemStats, equipment.getCombatStats());
     gui.newEquip(equipment, equipment.getType());
     gui.removeFromBackpack(equipment);
+  }
 
+  private boolean discoverAreaId(String newAreaId) {
+    Area area = db.getArea(newAreaId, discoveredAreaIds);
+    return discoverArea(newAreaId, area);
+  }
+
+  public boolean discoverArea(String newAreaId, Area newArea) {
+    // if area has already been discovered, return false
+    if (discoveredAreaIds.contains(newAreaId)) {
+      return false;
+    }
+    // else return true and create the area
+    else {
+      this.discoveredAreaIds.add(newAreaId);
+      this.discoveredAreas.add(newArea);
+      this.discoveredAreaNames.add(newArea.getName());
+      return true;
+    }
+  }
+
+  public boolean discoverEvent(String eventId, int repeatable) {
+    // access prerequisite item and item that triggers the event to stop repeating
+    ArrayList<String> items = db.getEventTriggerItems(eventId);
+    String reqItem = items.get(0);
+    String stopRepeat = items.get(1);
+    // if you own the item that stops the event from occuring, return false and do
+    // not activate the event
+    if (stopRepeat != null) {
+      if (db.keyItemCheck(stopRepeat)) {
+        KeyItem check = new KeyItem(db, stopRepeat);
+        if (this.keyItems.contains(check)) {
+          return false;
+        }
+
+      } else {
+        Equipment check = new Equipment(db, stopRepeat);
+        if (this.backpack.contains(check)) {
+          return false;
+        }
+      }
+    }
+
+    // if the event requires an item and the player does not have it, return false
+    // and do not activate the event
+    if (reqItem != null) {
+      if (db.keyItemCheck(reqItem)) {
+        KeyItem check = new KeyItem(db, reqItem);
+        if (!this.keyItems.contains(check)) {
+          return false;
+        }
+
+      } else {
+        Equipment check = new Equipment(db, reqItem);
+        if (!this.backpack.contains(check)) {
+          return false;
+        }
+      }
+    }
+    // if event is not repeatable and has already been discovered, return false and
+    // do not activate the event
+    if (repeatable == 0 && discoveredEventIds.contains(eventId)) {
+      return false;
+    }
+    // if event is new, add to discoveredEventIds
+    if (!discoveredEventIds.contains(eventId)) {
+
+      discoveredEventIds.add(eventId);
+    }
+    // if event can happen, activate the event
+    return true;
+  }
+
+  private void updateDiscoveredAreas() {
+    for (String areaId : this.discoveredAreaIds) {
+      Area area = db.getArea(areaId, discoveredAreaIds);
+      discoveredAreas.add(area);
+      discoveredAreaNames.add(area.getName());
+    }
   }
 
   private void addKeyItem(String keyItemId) {
@@ -393,6 +470,7 @@ public class Player extends CombatEntity {
   }
 
   private void initialLevelCheck() {
+    loadPlayerStats(this.level);
     while (this.xp >= this.xpForNextLevel) {
       this.level += 1;
       loadPlayerStats(this.level);
@@ -410,78 +488,10 @@ public class Player extends CombatEntity {
     this.level += 1;
     loadPlayerStats(this.level);
     this.currentHp = this.maxHp;
-    if (this.gui != null) {
+    if (!intro) {
       gui.levelUp(this.level, this.maxHp);
     }
-  }
 
-  public boolean discoverArea(String newAreaId, Area newArea) {
-    // if area has already been discovered, return false
-    if (discoveredAreaIds.contains(newAreaId)) {
-      return false;
-    }
-    // else return true and create the area
-    else {
-      this.discoveredAreaIds.add(newAreaId);
-      this.discoveredAreas.add(newArea);
-      this.discoveredAreaNames.add(newArea.getName());
-      // if (gui != null) {
-      // gui.updateArea(newArea);
-      // }
-      return true;
-    }
-  }
-
-  public boolean discoverEvent(String eventId, int repeatable) {
-    // access prerequisite item and item that triggers the event to stop repeating
-    ArrayList<String> items = db.getEventTriggerItems(eventId);
-    String reqItem = items.get(0);
-    String stopRepeat = items.get(1);
-    // if you own the item that stops the event from occuring, return false and do
-    // not activate the event
-    if (stopRepeat != null) {
-      if (db.keyItemCheck(stopRepeat)) {
-        KeyItem check = new KeyItem(db, stopRepeat);
-        if (this.keyItems.contains(check)) {
-          return false;
-        }
-
-      } else {
-        Equipment check = new Equipment(db, stopRepeat);
-        if (this.backpack.contains(check)) {
-          return false;
-        }
-      }
-    }
-
-    // if the event requires an item and the player does not have it, return false
-    // and do not activate the event
-    if (reqItem != null) {
-      if (db.keyItemCheck(reqItem)) {
-        KeyItem check = new KeyItem(db, reqItem);
-        if (!this.keyItems.contains(check)) {
-          return false;
-        }
-
-      } else {
-        Equipment check = new Equipment(db, reqItem);
-        if (!this.backpack.contains(check)) {
-          return false;
-        }
-      }
-    }
-    // if event is not repeatable and has already been discovered, return false and
-    // do not activate the event
-    if (repeatable == 0 && discoveredEventIds.contains(eventId)) {
-      return false;
-    }
-    // if event is new, add to discoveredEventIds
-    if (!discoveredEventIds.contains(eventId)) {
-
-      discoveredEventIds.add(eventId);
-    }
-    // if event can happen, activate the event
-    return true;
   }
 
   private void victory() {

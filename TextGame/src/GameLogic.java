@@ -11,17 +11,19 @@ public class GameLogic {
   Random rand = new Random();
   private Gui gui;
   private DatabaseManager db;
+  private int saveNumber;
   private Player player;
   private boolean combat;
   private Monster currentMonster;
   private boolean event = false;
   private int eventWarning = 0;
 
-  public GameLogic(DatabaseManager db, Gui gui) {
+  public GameLogic(DatabaseManager db, Gui gui, int saveNumber) {
+    this.saveNumber = saveNumber;
     this.db = db;
     this.gui = gui;
     Gui.setGameLogic(this);
-    newGame();
+    makeGame();
 
     // while (player.getCurrentHP()>0 & monster.getCurrentHP() >0) {
     // combatTurn(player, monster);
@@ -72,16 +74,23 @@ public class GameLogic {
     return this.player;
   }
 
-  private void newGame() {
-    this.player = db.loadSave(0, gui);
+  private void makeGame() {
+    this.player = db.loadSave(saveNumber, gui);
     // ensure that the new save does not overwrite any old save game if new game
-    player.setSaveNumber(db.howManySaves() + 1);
+    if (this.saveNumber == 0) {
+      player.setSaveNumber(db.howManySaves() + 1);
+    }
     gui.setPlayer(player);
+    player.setEquipment();
     player.guiSetUp();
+    gui.addAllToWindow();
   }
 
   public void setEvent(boolean bool) {
-    this.event = true;
+    this.event = bool;
+    if (!bool) {
+      eventWarning = 0;
+    }
   }
 
   private void explore(Area area) {
@@ -236,6 +245,8 @@ public class GameLogic {
   }
 
   private void activateEventOption(EventOption option) {
+
+    gui.printSpace();
     // extract option variables
     int cost = option.getGoldCost();
     int maxHeal = option.getHeal();
@@ -274,6 +285,11 @@ public class GameLogic {
         gui.playerCurrentHpUpdate();
       }
 
+      // if there is a resultText
+      if (resultText != null) {
+        gui.print(resultText, Color.BLACK, null);
+      }
+
       // manage item changes
       // if new item is obtained
       if (itemGet != null) {
@@ -292,11 +308,6 @@ public class GameLogic {
       // if player must fight
       if (fight != null) {
         newMonster(fight, null);
-      }
-
-      // if there is a resultText
-      if (resultText != null) {
-        gui.print(resultText, Color.BLACK, null);
       }
 
       // update Gui gold

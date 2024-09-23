@@ -1,6 +1,7 @@
 import javafx.beans.binding.StringBinding;
 import javafx.beans.property.DoubleProperty;
 import javafx.scene.control.Label;
+import java.text.DecimalFormat;
 
 public class SimpleBindingDoubleLabel extends Label {
 
@@ -16,8 +17,12 @@ public class SimpleBindingDoubleLabel extends Label {
         if (variable.get() == 0 && string2.equals(")")) {
           return "-";
         }
-        return string1 + variable.get() + string2;
+        // code to avoid scientific notation:
+        DecimalFormat format = new DecimalFormat("0");
+        String variableOutput = format.format(variable.get());
+        return string1 + variableOutput + string2;
       }
     });
   }
+
 }

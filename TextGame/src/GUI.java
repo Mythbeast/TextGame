@@ -1,4 +1,5 @@
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -32,7 +33,7 @@ import javafx.stage.Stage;
 public class Gui {
   // constants
   private static final int WINDOW_WIDTH = 1400;
-  private static final int WINDOW_HEIGHT = 1000;
+  private static final int WINDOW_HEIGHT = 900;
   private static final int MAIN_TEXT_BOX_WIDTH = 600;
   private static final int MAIN_TEXT_BOX_HEIGHT = 400;
   private static final int PLAYER_HP_WIDTH = 1200;
@@ -162,9 +163,6 @@ public class Gui {
     setGridPane(menuUi);
     createMenuUi();
 
-    // add all items to main window
-    addAllToWindow();
-
     // set the scene and show the window
     Scene scene = new Scene(root, WINDOW_WIDTH, WINDOW_HEIGHT);
     primaryStage.setTitle("TextGame");
@@ -172,7 +170,33 @@ public class Gui {
     primaryStage.show();
 
     startText();
+  }
 
+  public void addAllToWindow() {
+    root.getChildren().clear();
+    // add items to window to row a col b
+    root.add(areaSelect, 1, 4);
+    root.add(exploreButton, 2, 4);
+    GridPane.setColumnSpan(textScrollPane, 3);
+    root.add(textScrollPane, 3, 3);
+    GridPane.setColumnSpan(playerMissingHpBar, 9);
+    GridPane.setRowSpan(playerMissingHpBar, 2);
+    root.add(playerMissingHpBar, 0, 0);
+    GridPane.setColumnSpan(playerHpBar, 9);
+    GridPane.setRowSpan(playerHpBar, 2);
+    root.add(playerHpBar, 0, 0);
+    root.add(playerLevelLabel, 9, 0);
+    root.add(playerHpTextLabel, 9, 1);
+    root.add(playerItemHpLabel, 10, 1);
+
+    GridPane.setColumnSpan(playerUi, 3);
+    root.add(playerUi, 0, 3);
+    GridPane.setColumnSpan(monsterUi, 3);
+    root.add(monsterUi, 8, 3);
+    GridPane.setColumnSpan(eventUi, 11);
+    root.add(eventUi, 0, 10);
+    GridPane.setColumnSpan(menuUi, 11);
+    root.add(menuUi, 0, 15);
   }
 
   public static void setGameLogic(GameLogic game) {
@@ -302,6 +326,11 @@ public class Gui {
   }
 
   public void levelUp(int level, int newMaxHp) {
+    if (this.playerCurrentHpVisible == null) {
+      setHpBarAndLevel();
+      getPlayerStats();
+      return;
+    }
     print("Level Up!", Color.GOLDENROD, "bold");
     print("You are now level " + level, Color.BLACK, "bold");
     this.playerCurrentHpVisible.set(newMaxHp);
@@ -483,6 +512,7 @@ public class Gui {
       eventUi.getChildren()
           .removeIf(node -> GridPane.getColumnIndex(node) == column && GridPane.getRowIndex(node) == 0);
     }
+    game1.setEvent(false);
   }
 
   public void newEventOption(int i, EventOption option) {
@@ -578,32 +608,6 @@ public class Gui {
     this.subMenu.add(scrollpane, 0, 1);
   }
 
-  private void addAllToWindow() {
-    // add items to window to row a col b
-    root.add(areaSelect, 1, 4);
-    root.add(exploreButton, 2, 4);
-    GridPane.setColumnSpan(textScrollPane, 3);
-    root.add(textScrollPane, 3, 3);
-    GridPane.setColumnSpan(playerMissingHpBar, 9);
-    GridPane.setRowSpan(playerMissingHpBar, 2);
-    root.add(playerMissingHpBar, 0, 0);
-    GridPane.setColumnSpan(playerHpBar, 9);
-    GridPane.setRowSpan(playerHpBar, 2);
-    root.add(playerHpBar, 0, 0);
-    root.add(playerLevelLabel, 9, 0);
-    root.add(playerHpTextLabel, 9, 1);
-    root.add(playerItemHpLabel, 10, 1);
-
-    GridPane.setColumnSpan(playerUi, 3);
-    root.add(playerUi, 0, 3);
-    GridPane.setColumnSpan(monsterUi, 3);
-    root.add(monsterUi, 8, 3);
-    GridPane.setColumnSpan(eventUi, 11);
-    root.add(eventUi, 0, 10);
-    GridPane.setColumnSpan(menuUi, 11);
-    root.add(menuUi, 0, 15);
-  }
-
   private void createMenuInfoTextLabel() {
     this.menuInfoText = new Label("");
     this.menuInfoText.setStyle(BORDER_STYLE);
@@ -636,7 +640,11 @@ public class Gui {
 
       @Override
       protected String computeValue() {
-        return "XP: " + currentXp.get() + " / " + xpForNextLevel.get();
+        // code to avoid scientific notation:
+        DecimalFormat format1 = new DecimalFormat("0");
+        String currentXpOutput = format1.format(currentXp.get());
+        String nextXpOutput = format1.format(xpForNextLevel.get());
+        return "XP: " + currentXpOutput + " / " + nextXpOutput;
       }
     };
     playerXpLabel.textProperty().bind(playerXpBinding);
@@ -842,6 +850,7 @@ public class Gui {
     this.playerCritChance = intToIntegerProperty(this.player.getCritChance());
     this.playerCritDamage = intToIntegerProperty(this.player.getCritDamage());
     this.playerGold = intToIntegerProperty(this.player.getGold());
+    this.xpForNextLevel = doubleToDoubleProperty(this.player.getXpForNextLevel());
 
   }
 

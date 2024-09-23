@@ -1,0 +1,7 @@
+WITH CumulativeSums AS (
+    SELECT Level, 
+           SUM(xpCalcs) OVER (ORDER BY Level) AS xpNeeded
+    FROM PlayerLevelStats
+)
+UPDATE PlayerLevelStats
+SET xpNeeded = (SELECT xpNeeded FROM CumulativeSums WHERE CumulativeSums.Level = PlayerLevelStats.Level);

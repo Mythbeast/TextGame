@@ -11,7 +11,7 @@ import java.util.HashMap;
 // TODO: Add player database for saved games.
 
 public class DatabaseManager {
-  String location = "jdbc:sqlite:C:\\Coding Projects\\TextGame\\game.db";
+  String location = "jdbc:sqlite:C:\\Temp\\TextGame\\game.db";
   private Connection conn;
 
   public DatabaseManager() {
@@ -426,16 +426,18 @@ public class DatabaseManager {
     }
   }
 
-  public void saveGame(int saveNumber, double xp, int gold, ArrayList<String> discoveredAreasIds,
+  public void saveGame(int saveNumber, int level, double xp, int gold, ArrayList<String> discoveredAreasIds,
       ArrayList<Equipment> currentEquipment, ArrayList<Equipment> backpack, ArrayList<KeyItem> keyItems,
       ArrayList<String> discoveredEventIds) {
 
     deleteSave(saveNumber);
 
+    saveStat(saveNumber, "keyValue", "level", level);
     saveStat(saveNumber, "keyValue", "gold", gold);
-    saveStat(saveNumber, "keyValue", "xp", xp);
+    saveStatDouble(saveNumber, "keyValue", "xp", xp);
     for (String areaId : discoveredAreasIds) {
       saveStat(saveNumber, "area", areaId, 1);
+      System.out.println(areaId);
     }
     for (String eventId : discoveredEventIds) {
       saveStat(saveNumber, "event", eventId, 1);
@@ -454,6 +456,41 @@ public class DatabaseManager {
     }
   }
 
+  public saveInfo getSaveInfo(int saveNumber) {
+    String sql = "SELECT ArrayListName, String, Value FROM SavedGame WHERE saveNumber = ?";
+
+    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+      // add in saveNumber to SQL query
+      pstmt.setInt(1, saveNumber);
+      // create variables to hold save info
+      ArrayList<String> areaIds = new ArrayList<>();
+      int level = 0;
+      // populate variables
+      try (ResultSet rs = pstmt.executeQuery()) {
+        while (rs.next()) {
+          String type = rs.getString("ArrayListName");
+          switch (type) {
+            case "keyValue":
+              if (rs.getString("String").equals("level")) {
+                level = rs.getInt("value");
+              }
+              break;
+            case "area":
+              areaIds.add(rs.getString("String"));
+              break;
+          }
+        }
+      }
+      int areasDiscovered = areaIds.size();
+      return new saveInfo(areasDiscovered, level, "explore");
+
+    } catch (SQLException e) {
+      System.out.println(e.getMessage());
+      System.out.println("Error: loadSave error");
+      return new saveInfo(0, saveNumber, "explore");
+    }
+  }
+
   public Player loadSave(int saveNumber, Gui gui) {
     String sql = "SELECT ArrayListName, String, Value FROM SavedGame WHERE saveNumber = ?";
 
@@ -468,6 +505,7 @@ public class DatabaseManager {
       ArrayList<String> keyItems = new ArrayList<>();
       int gold = 0;
       double xp = 0;
+      int level = 1;
       // populate variables
       try (ResultSet rs = pstmt.executeQuery()) {
         while (rs.next()) {
@@ -480,7 +518,9 @@ public class DatabaseManager {
               if (rs.getString("String").equals("xp")) {
                 xp = rs.getDouble("value");
               }
-              areaIds.add(rs.getString("String"));
+              if (rs.getString("String").equals("level")) {
+                level = rs.getInt("value");
+              }
               break;
             case "area":
               areaIds.add(rs.getString("String"));
@@ -500,12 +540,13 @@ public class DatabaseManager {
           }
 
         }
-        return new Player(this, gui, saveNumber, gold, xp, areaIds, eventIds, currentEquipment, backpack, keyItems);
+        return new Player(this, gui, saveNumber, gold, level, xp, areaIds, eventIds, currentEquipment, backpack,
+            keyItems);
       }
     } catch (SQLException e) {
       System.out.println(e.getMessage());
       System.out.println("Error: loadSave error");
-      return new Player(null, gui, saveNumber, saveNumber, saveNumber, null, null, null, null, null);
+      return new Player(null, gui, saveNumber, 0, 1, 0, null, null, null, null, null);
     }
   }
 
@@ -522,6 +563,10 @@ public class DatabaseManager {
       System.out.println(e.getMessage());
       System.out.println("Error: removeSave error");
     }
+  }
+
+  public void showSaveDetails(int saveNumber) {
+
   }
 
   public int howManySaves() {
@@ -558,7 +603,7 @@ public class DatabaseManager {
   }
 
   private void saveStat(int saveNumber, String ArrayListName, String text, int value) {
-    String sql = "INSERT INTO SavedGame (SaveNumber, ArrayListName, Value, String) VALUES(?, ?, ?, ?)";
+    String sql = "INSERT INTO SavedGame (SaveNumber, ArrayListName, String, Value) VALUES(?, ?, ?, ?)";
 
     try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
       // add in values to SQL query
@@ -576,8 +621,8 @@ public class DatabaseManager {
 
   }
 
-  private void saveStat(int saveNumber, String ArrayListName, String text, double value) {
-    String sql = "INSERT INTO SavedGame (SaveNumber, ArrayListName, Value, String) VALUES(?, ?, ?, ?)";
+  private void saveStatDouble(int saveNumber, String ArrayListName, String text, double value) {
+    String sql = "INSERT INTO SavedGame (SaveNumber, ArrayListName, String, Value) VALUES(?, ?, ?, ?)";
 
     try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
       // add in values to SQL query

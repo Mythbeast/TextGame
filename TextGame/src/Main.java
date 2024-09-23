@@ -8,11 +8,10 @@ public class Main extends Application {
 
   @Override
   public void start(Stage primaryStage) {
-    this.gui = new Gui(primaryStage);
-    DatabaseManager db = new DatabaseManager();
-    this.game1 = new GameLogic(db, gui);
 
-    primaryStage.setTitle("TextGame");
+    DatabaseManager db = new DatabaseManager();
+    menuGui menu = new menuGui(primaryStage, db);
+
     primaryStage.show();
 
     // TODO: create classes for db returns to avoid casting
