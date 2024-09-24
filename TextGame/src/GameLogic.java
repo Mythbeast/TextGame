@@ -13,8 +13,10 @@ public class GameLogic {
   private DatabaseManager db;
   private int saveNumber;
   private Player player;
+  private RunStatList runStats;
   private boolean combat;
   private Monster currentMonster;
+  private boolean newDiscoveryMonster = false;
   private boolean event = false;
   private int eventWarning = 0;
 
@@ -37,6 +39,9 @@ public class GameLogic {
       gui.print("There is an event active, are you sure?", Color.BLACK, null);
       eventWarning += 1;
     } else {
+      if (!combat) {
+        runStats.addStatTimesExplored();
+      }
       gui.removeEvent();
       eventWarning = 0;
       player.saveGame();
@@ -78,11 +83,15 @@ public class GameLogic {
     this.player = db.loadSave(saveNumber, gui);
     // ensure that the new save does not overwrite any old save game if new game
     if (this.saveNumber == 0) {
-      player.setSaveNumber(db.howManySaves() + 1);
+      this.saveNumber = db.howManySaves() + 1;
+      player.setSaveNumber(this.saveNumber);
+
     }
+    this.runStats = player.getRunStats();
     gui.setPlayer(player);
     player.setEquipment();
     player.guiSetUp();
+    gui.createScrollableRunStats();
     gui.addAllToWindow();
   }
 
@@ -91,6 +100,10 @@ public class GameLogic {
     if (!bool) {
       eventWarning = 0;
     }
+  }
+
+  public void saveRecord(String text, int value) {
+    db.saveRecord(text, value);
   }
 
   private void explore(Area area) {
@@ -171,11 +184,16 @@ public class GameLogic {
     String monsterId = (String) monsterDetails.get(0);
     String monsterEncounterText = (String) monsterDetails.get(2);
     newMonster(monsterId, monsterEncounterText);
+    // if the monster is new to the player - update Gui for each location
+    if (player.discoverMonster(monsterId)) {
+      this.newDiscoveryMonster = true;
+    }
   }
 
   private void newMonster(String monsterId, String encounterText) {
     gui.removeMonster();
     combat = true;
+    this.newDiscoveryMonster = false;
 
     // print encounter text
     gui.printSpace();
@@ -183,6 +201,7 @@ public class GameLogic {
 
     Monster mon = new Monster(this.db, this.gui, monsterId);
     gui.newMonster(mon);
+    runStats.addStatMonstersFound();
 
     // return monster
     this.currentMonster = mon;
@@ -388,8 +407,16 @@ public class GameLogic {
 
         }
       }
-      gui.printSpace();
+      runStats.addStatMonstersKilled();
+      if (newDiscoveryMonster) {
+        ArrayList<String> allLocations = db.getMonsterLocationList(monster.getId());
+        this.runStats.addStatDifferentMonsters();
+        for (String areaName : allLocations) {
+          gui.updateAreaMonsters(areaName);
 
+        }
+      }
+      gui.printSpace();
       gui.removeMonster();
     }
 
@@ -431,9 +458,8 @@ public class GameLogic {
   }
 
   private void death() {
-    gui.printSpace();
-    gui.print("You have died.", Color.BLACK, "bold");
-    // save stats
-    // option to replay
+    db.deleteSave(this.saveNumber);
+    gui.death(db.getRecords());
+
   }
 }

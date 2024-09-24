@@ -15,7 +15,13 @@ public class Main extends Application {
     primaryStage.show();
 
     // TODO: create classes for db returns to avoid casting
-    // TODO: change main class to application
+    // TODO: create game end on death - remove explore button and combobox and
+    // button for stats/main menu
+    // TODO: create game win on victory - stats page etc
+    // TODO: save records to database
+    // TODO: create roguelike mode - edit new game menu to create (similar to load
+    // menu)
+
   }
 
   public static void main(String[] args) {

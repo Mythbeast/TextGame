@@ -1,5 +1,7 @@
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Set;
+import java.util.HashSet;
 
 public class Area {
   private DatabaseManager db;
@@ -12,6 +14,7 @@ public class Area {
   private int[] areaWeights;
   private int[] areaWeightThresholds;
   private List<Object> monsterList;
+  private Set<String> monIdList = new HashSet<String>();
   private int[] monsterWeights;
   private int[] monsterWeightThresholds;
   private List<Object> eventList;
@@ -41,6 +44,10 @@ public class Area {
     this.exploreChance = createThresholds(new int[] { this.areaChance, this.monsterChance, this.eventChance });
 
     if (this.exploreChance[3] != 100) {
+      for (int i = 0; i < exploreChance.length; i++) {
+        System.out.println(this.exploreChance[i]);
+      }
+
       System.out.println("Error: Area chances are invalid.");
     }
     this.monsterList = this.db.getMonsterList(this.ID);
@@ -116,6 +123,10 @@ public class Area {
     return this.monsterList;
   }
 
+  public Set<String> getMonIdList() {
+    return this.monIdList;
+  }
+
   public int[] getEventWeightThresholds() {
     return this.eventWeightThresholds;
   }
@@ -132,6 +143,8 @@ public class Area {
     // cycle through each monster
     for (int i = 0; i <= this.monsterList.size() - 1; i++) {
       List<Object> monster = (List<Object>) this.monsterList.get(i);
+      String monId = (String) monster.get(0);
+      monIdList.add(monId);
 
       // check monster weight is a valid integer
       if (monster.get(1) instanceof Integer) {

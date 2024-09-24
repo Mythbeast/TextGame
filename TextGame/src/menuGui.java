@@ -18,6 +18,7 @@ public class menuGui {
     private Button newGameButton = new Button("New Game");
     private Button loadGameButton = new Button("Load Game");
     private GridPane loadMenu = new GridPane();
+    private Button loadSave = new Button("Load");
     private int activeSaveNumber;
     private int howManySaves;
 
@@ -58,7 +59,8 @@ public class menuGui {
         // add load button and titles
         addLoadElements();
         addBackButton();
-        addDeleteButton();
+
+        menu.add(loadMenu, 0, 0);
 
         // add info for each save
 
@@ -66,12 +68,14 @@ public class menuGui {
             Label noSaves = new Label("There are no saved games");
             GridPane.setColumnSpan(noSaves, 3);
             loadMenu.add(noSaves, 1, 4);
+            loadMenu.getChildren().remove(loadSave);
+            return;
         }
+        addDeleteButton();
         for (int i = 1; i <= howManySaves; i++) {
             showSaveDetails(i);
         }
         ;
-        menu.add(loadMenu, 0, 0);
 
         for (javafx.scene.Node node : loadMenu.getChildren()) {
             GridPane.setHalignment(node, HPos.CENTER);
@@ -84,7 +88,6 @@ public class menuGui {
         loadMenu.add(new Label("Level"), 2, 0);
         loadMenu.add(new Label("Game Mode"), 3, 0);
 
-        Button loadSave = new Button("Load");
         loadMenu.add(loadSave, 4, howManySaves + 5);
         loadSave.setOnAction(event -> {
             if (this.activeSaveNumber > 0) {

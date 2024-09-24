@@ -7,6 +7,7 @@ import javafx.scene.paint.Color;
 public class Monster extends CombatEntity {
   private DatabaseManager db;
   private Gui gui;
+  private String id;
   private String name;
   private String deathText;
   private HashMap<String, Integer> drops;
@@ -14,6 +15,7 @@ public class Monster extends CombatEntity {
   public Monster(DatabaseManager db, Gui gui, String monsterID) {
     this.db = db;
     this.gui = gui;
+    this.id = monsterID;
     List<Object> monsterInfo = db.getMonsterInfo(monsterID);
     this.name = (String) monsterInfo.get(0);
     this.level = (Integer) monsterInfo.get(1);
@@ -32,6 +34,10 @@ public class Monster extends CombatEntity {
     // drop.put("dagger", 35);
     // drops.add(drop);
 
+  }
+
+  public String getId() {
+    return id;
   }
 
   public String getName() {

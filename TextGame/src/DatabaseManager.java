@@ -7,6 +7,8 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.HashSet;
 
 // TODO: Add player database for saved games.
 
@@ -105,7 +107,7 @@ public class DatabaseManager {
     String sql = "SELECT areaID FROM areaConnections where connectedAreaId = ?";
 
     try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-      // add in monsterID to SQL query
+      // add in areaId to SQL query
       pstmt.setString(1, nextAreaId);
       try (ResultSet rs = pstmt.executeQuery()) {
         ArrayList<String> result = new ArrayList<String>();
@@ -203,6 +205,31 @@ public class DatabaseManager {
       // unreachable unless error occurs
       System.out.println("Error: getMonsterList error");
       List<Object> errorList = new ArrayList<Object>();
+      return errorList;
+    }
+  }
+
+  public ArrayList<String> getMonsterLocationList(String monsterId) {
+    // returns list of all area names that contain monsterId
+    String sql = "SELECT areaID FROM monsterLocations where monsterID = ?";
+
+    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+      // add in monsterID to SQL query
+      pstmt.setString(1, monsterId);
+      try (ResultSet rs = pstmt.executeQuery()) {
+        ArrayList<String> result = new ArrayList<String>();
+
+        while (rs.next()) {
+          String areaId = rs.getString("areaId");
+          result.add(getAreaName(areaId));
+        }
+        return result;
+      }
+    } catch (SQLException e) {
+      System.out.println(e.getMessage());
+      // unreachable unless error occurs
+      System.out.println("Error: getMonsterLocationList error");
+      ArrayList<String> errorList = new ArrayList<String>();
       return errorList;
     }
   }
@@ -428,7 +455,7 @@ public class DatabaseManager {
 
   public void saveGame(int saveNumber, int level, double xp, int gold, ArrayList<String> discoveredAreasIds,
       ArrayList<Equipment> currentEquipment, ArrayList<Equipment> backpack, ArrayList<KeyItem> keyItems,
-      ArrayList<String> discoveredEventIds) {
+      ArrayList<String> discoveredEventIds, RunStatList runStats, Set<String> monIdList) {
 
     deleteSave(saveNumber);
 
@@ -437,7 +464,6 @@ public class DatabaseManager {
     saveStatDouble(saveNumber, "keyValue", "xp", xp);
     for (String areaId : discoveredAreasIds) {
       saveStat(saveNumber, "area", areaId, 1);
-      System.out.println(areaId);
     }
     for (String eventId : discoveredEventIds) {
       saveStat(saveNumber, "event", eventId, 1);
@@ -453,6 +479,26 @@ public class DatabaseManager {
     for (KeyItem key : keyItems) {
       String keyId = key.getId();
       saveStat(saveNumber, "keyItem", keyId, 1);
+    }
+
+    saveRunStats(saveNumber, runStats);
+    saveMonList(saveNumber, monIdList);
+  }
+
+  private void saveRunStats(int saveNumber, RunStatList runStats) {
+    saveStat(saveNumber, "stat", "foundEvent", runStats.getStatEventsDiscovered());
+    saveStat(saveNumber, "stat", "foundArea", runStats.getStatAreasDiscovered());
+    saveStat(saveNumber, "stat", "monDiff", runStats.getStatDifferentMonsters());
+    saveStat(saveNumber, "stat", "monKill", runStats.getStatMonstersKilled());
+    saveStat(saveNumber, "stat", "monFind", runStats.getStatMonstersFound());
+    saveStat(saveNumber, "stat", "foundEquip", runStats.getStatItemsFound());
+    saveStat(saveNumber, "stat", "foundKey", runStats.getStatKeyItemsFound());
+    saveStat(saveNumber, "stat", "explore", runStats.getStatTimesExplored());
+  }
+
+  private void saveMonList(int saveNumber, Set<String> monIdList) {
+    for (String monId : monIdList) {
+      saveStat(saveNumber, "monId", monId, 1);
     }
   }
 
@@ -506,20 +552,26 @@ public class DatabaseManager {
       int gold = 0;
       double xp = 0;
       int level = 1;
+      RunStatList runStats = new RunStatList(gui);
+      Set<String> monIdList = new HashSet<String>();
       // populate variables
       try (ResultSet rs = pstmt.executeQuery()) {
         while (rs.next()) {
           String type = rs.getString("ArrayListName");
           switch (type) {
             case "keyValue":
-              if (rs.getString("String").equals("gold")) {
-                gold = rs.getInt("value");
-              }
-              if (rs.getString("String").equals("xp")) {
-                xp = rs.getDouble("value");
-              }
-              if (rs.getString("String").equals("level")) {
-                level = rs.getInt("value");
+              String subType = rs.getString("String");
+              switch (subType) {
+                case "gold":
+                  gold = rs.getInt("value");
+                  break;
+                case "xp":
+                  xp = rs.getDouble("value");
+                  break;
+                case "level":
+                  level = rs.getInt("value");
+                  break;
+
               }
               break;
             case "area":
@@ -537,16 +589,48 @@ public class DatabaseManager {
             case "keyItem":
               keyItems.add(rs.getString("String"));
               break;
+            case "monId":
+              monIdList.add(rs.getString("String"));
+              break;
+            case "stat":
+              String subType2 = rs.getString("String");
+              switch (subType2) {
+                case "foundEvent":
+                  runStats.setStatEventsDiscovered(rs.getInt("value"));
+                  break;
+                case "foundArea":
+                  runStats.setStatAreasDiscovered(rs.getInt("value"));
+                  break;
+                case "monDiff":
+                  runStats.setStatDifferentMonsters(rs.getInt("value"));
+                  break;
+                case "monKill":
+                  runStats.setStatMonstersKilled(rs.getInt("value"));
+                  break;
+                case "monFind":
+                  runStats.setStatMonstersFound(rs.getInt("value"));
+                  break;
+                case "foundEquip":
+                  runStats.setStatItemsFound(rs.getInt("value"));
+                  break;
+                case "foundKey":
+                  runStats.setStatKeyItemsFound(rs.getInt("value"));
+                  break;
+                case "explore":
+                  runStats.setStatTimesExplored(rs.getInt("value"));
+                  break;
+              }
+              break;
           }
 
         }
         return new Player(this, gui, saveNumber, gold, level, xp, areaIds, eventIds, currentEquipment, backpack,
-            keyItems);
+            keyItems, runStats, monIdList);
       }
     } catch (SQLException e) {
       System.out.println(e.getMessage());
       System.out.println("Error: loadSave error");
-      return new Player(null, gui, saveNumber, 0, 1, 0, null, null, null, null, null);
+      return new Player(null, gui, saveNumber, 0, 1, 0, null, null, null, null, null, null, null);
     }
   }
 
@@ -600,6 +684,44 @@ public class DatabaseManager {
       e.printStackTrace();
     }
     return conn;
+  }
+
+  public HashMap<String, Integer> getRecords() {
+    // returns game records
+    String sql = "SELECT string, value FROM Record";
+
+    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+      HashMap<String, Integer> result = new HashMap<String, Integer>();
+      try (ResultSet rs = pstmt.executeQuery()) {
+        while (rs.next()) {
+          String text = rs.getString("string");
+          int value = rs.getInt("value");
+          result.put(text, value);
+        }
+        return result;
+      }
+    } catch (SQLException e) {
+      System.out.println(e.getMessage());
+      // unreachable unless error occurs
+      System.out.println("Error: getMonsterLocationList error");
+      return new HashMap<String, Integer>();
+    }
+  }
+
+  public void saveRecord(String text, int value) {
+    String sql = "INSERT OR REPLACE INTO Record (string, value) VALUES(?, ?)";
+
+    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+      // add in values to SQL query
+      pstmt.setString(1, text);
+      pstmt.setInt(2, value);
+      pstmt.executeUpdate();
+
+    } catch (SQLException e) {
+      System.out.println(e.getMessage());
+      System.out.println("Error: saveGame error");
+    }
+
   }
 
   private void saveStat(int saveNumber, String ArrayListName, String text, int value) {

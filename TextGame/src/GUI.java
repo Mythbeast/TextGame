@@ -14,7 +14,9 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -49,6 +51,7 @@ public class Gui {
   private static final Insets DEFAUL_INSETS = new Insets(10, 10, 10, 10);
   private static final int GRIDPANE_GAPS = 10;
   private static final String BORDER_STYLE = "-fx-border-color: black; -fx-border-width: 2px;";
+  private static final int RUN_STATISTICS_START = 11;
 
   // core variables
   private static GameLogic game1;
@@ -135,6 +138,17 @@ public class Gui {
   private GridPane runStatisticsPane = new GridPane();
   private ScrollPane scrollableAreaStats = new ScrollPane(areaStatisticsPane);
   private ScrollPane scrollableRunStats = new ScrollPane(runStatisticsPane);
+  // variables used for Run Statistics menu
+  private RunStatList runStats;
+  private IntegerProperty exploreCount;
+  private IntegerProperty areaCount;
+  private IntegerProperty eventCount;
+  private IntegerProperty monFindCount;
+  private IntegerProperty monKillCount;
+  private IntegerProperty uniqueMonCount;
+  private IntegerProperty keyCount;
+  private IntegerProperty equipCount;
+  private GridPane statScreen = new GridPane();
 
   public Gui(Stage primaryStage) {
     this.stage = primaryStage;
@@ -235,6 +249,38 @@ public class Gui {
     this.playerGold.set(this.player.getGold());
   }
 
+  public void setAreaCount(int areaCount) {
+    this.areaCount.set(areaCount);
+  }
+
+  public void setEquipCount(int equipCount) {
+    this.equipCount.set(equipCount);
+  }
+
+  public void setEventCount(int eventCount) {
+    this.eventCount.set(eventCount);
+  }
+
+  public void setKeyCount(int keyCount) {
+    this.keyCount.set(keyCount);
+  }
+
+  public void setMonKillCount(int monKillCount) {
+    this.monKillCount.set(monKillCount);
+  }
+
+  public void setUniqueMonCount(int uniqueMonCount) {
+    this.uniqueMonCount.set(uniqueMonCount);
+  }
+
+  public void setMonFindCount(int monFindCount) {
+    this.monFindCount.set(monFindCount);
+  }
+
+  public void setExploreCount(int exploreCount) {
+    this.exploreCount.set(exploreCount);
+  }
+
   public void print(String string, Color colour, String style) {
     // method used for all printing to the UI
     if (style == null) {
@@ -298,6 +344,24 @@ public class Gui {
     // change the label to update area discovery
     for (var label : areaStatisticsPane.getChildren()) {
       if (GridPane.getColumnIndex(label) == 1 && GridPane.getRowIndex(label) == row) {
+        String text = ((Label) label).getText();
+        String newText = incrementDiscoveries(text);
+        ((Label) label).setText(newText);
+      }
+    }
+  }
+
+  public void updateAreaMonsters(String areaName) {
+    // get which row in areaStatistics to update
+    int row = -1;
+    for (var label : areaStatisticsPane.getChildren()) {
+      if (((Label) label).getText().equals(areaName)) {
+        row = GridPane.getRowIndex(label);
+      }
+    }
+    // change the label to update monster discovery
+    for (var label : areaStatisticsPane.getChildren()) {
+      if (GridPane.getColumnIndex(label) == 2 && GridPane.getRowIndex(label) == row) {
         String text = ((Label) label).getText();
         String newText = incrementDiscoveries(text);
         ((Label) label).setText(newText);
@@ -541,6 +605,133 @@ public class Gui {
     eventUi.add(noButton, 1, 0);
   }
 
+  public void death(HashMap<String, Integer> record) {
+    printSpace();
+    print("You have died.", Color.BLACK, "bold");
+    Button statScreenButton = new Button("Run Summary");
+    statScreenButton.setOnAction(event -> {
+      statScreen(record);
+    });
+    ObservableList<Node> elements = root.getChildren();
+    elements.remove(exploreButton);
+    elements.remove(areaSelect);
+    root.add(statScreenButton, 2, 4);
+  }
+
+  private void statScreen(HashMap<String, Integer> record) {
+    root.getChildren().clear();
+    setGridPane(statScreen);
+    statScreen.setPadding(DEFAUL_INSETS);
+    createStatScreenText();
+    createStatsForRecords(record);
+
+    root.add(statScreen, 0, 0);
+
+    ObservableList<Node> labels = statScreen.getChildren();
+    // runStatisticsStart is 11 as there are 11 labels to set up the statsScreen
+    // (0-10)
+    int runStatisticsEnd = labels.size() - 1;
+
+    for (int i = RUN_STATISTICS_START; i <= runStatisticsEnd; i++) {
+      GridPane.setHalignment(labels.get(i), HPos.CENTER);
+    }
+  }
+
+  private void createStatScreenText() {
+    statScreen.add(new Label("This Run"), 1, 0);
+    statScreen.add(new Label("Previous Record"), 2, 0);
+
+    statScreen.add(new Label("Level:"), 0, 1);
+    statScreen.add(new Label("Times Explored:"), 0, 2);
+    statScreen.add(new Label("Areas Found:"), 0, 3);
+    statScreen.add(new Label("Events Found:"), 0, 4);
+    statScreen.add(new Label("Total Monsters Found:"), 0, 5);
+    statScreen.add(new Label("Total Monsters Killed:"), 0, 6);
+    statScreen.add(new Label("Unique Monsters Killed:"), 0, 7);
+    statScreen.add(new Label("Key Items Found:"), 0, 8);
+    statScreen.add(new Label("Equipment Found:"), 0, 9);
+  }
+
+  private void createStatsForRecords(HashMap<String, Integer> record) {
+    // create labels for this run stats
+    int level = this.playerLevel.get();
+    int explore = this.exploreCount.get();
+    int area = this.areaCount.get();
+    int event = this.eventCount.get();
+    int monFind = this.monFindCount.get();
+    int monKill = this.monKillCount.get();
+    int uniqueMon = this.uniqueMonCount.get();
+    int key = this.keyCount.get();
+    int equip = this.equipCount.get();
+
+    Label thisRunLevelLabel = new Label(String.valueOf(level));
+    Label thisRunExploreLabel = new Label(String.valueOf(explore));
+    Label thisRunAreaLabel = new Label(String.valueOf(area));
+    Label thisRunEventLabel = new Label(String.valueOf(event));
+    Label thisRunMonFindLabel = new Label(String.valueOf(monFind));
+    Label thisRunMonKillLabel = new Label(String.valueOf(monKill));
+    Label thisRunUniqueMonLabel = new Label(String.valueOf(uniqueMon));
+    Label thisRunKeyLabel = new Label(String.valueOf(key));
+    Label thisRunEquipLabel = new Label(String.valueOf(equip));
+
+    statScreen.add(thisRunLevelLabel, 1, 1);
+    statScreen.add(thisRunExploreLabel, 1, 2);
+    statScreen.add(thisRunAreaLabel, 1, 3);
+    statScreen.add(thisRunEventLabel, 1, 4);
+    statScreen.add(thisRunMonFindLabel, 1, 5);
+    statScreen.add(thisRunMonKillLabel, 1, 6);
+    statScreen.add(thisRunUniqueMonLabel, 1, 7);
+    statScreen.add(thisRunKeyLabel, 1, 8);
+    statScreen.add(thisRunEquipLabel, 1, 9);
+    // create labels for record stats
+    int levelRecord = record.getOrDefault("level", 0);
+    int exploreRecord = record.getOrDefault("explore", 0);
+    int areaRecord = record.getOrDefault("area", 0);
+    int eventsRecord = record.getOrDefault("event", 0);
+    int monFindRecord = record.getOrDefault("monFind", 0);
+    int monKillRecord = record.getOrDefault("monKill", 0);
+    int uniqueMonKillRecord = record.getOrDefault("uniqueMonKill", 0);
+    int keyRecord = record.getOrDefault("key", 0);
+    int equipRecord = record.getOrDefault("equip", 0);
+    statScreen.add(new RecordLabel(intToIntegerProperty(levelRecord)), 2, 1);
+    statScreen.add(new RecordLabel(intToIntegerProperty(exploreRecord)), 2, 2);
+    statScreen.add(new RecordLabel(intToIntegerProperty(areaRecord)), 2, 3);
+    statScreen.add(new RecordLabel(intToIntegerProperty(eventsRecord)), 2, 4);
+    statScreen.add(new RecordLabel(intToIntegerProperty(monFindRecord)), 2, 5);
+    statScreen.add(new RecordLabel(intToIntegerProperty(monKillRecord)), 2, 6);
+    statScreen.add(new RecordLabel(intToIntegerProperty(uniqueMonKillRecord)), 2, 7);
+    statScreen.add(new RecordLabel(intToIntegerProperty(keyRecord)), 2, 8);
+    statScreen.add(new RecordLabel(intToIntegerProperty(equipRecord)), 2, 9);
+    // add colour if this run > record
+    if (level > levelRecord) {
+      game1.saveRecord("level", level);
+    }
+    if (explore > exploreRecord) {
+      game1.saveRecord("explore", explore);
+    }
+    if (area > areaRecord) {
+      game1.saveRecord("area", area);
+    }
+    if (event > eventsRecord) {
+      game1.saveRecord("event", event);
+    }
+    if (monFind > monFindRecord) {
+      game1.saveRecord("monFind", monFind);
+    }
+    if (monKill > monKillRecord) {
+      game1.saveRecord("monKill", monKill);
+    }
+    if (uniqueMon > uniqueMonKillRecord) {
+      game1.saveRecord("uniqueMonKill", uniqueMon);
+    }
+    if (key > keyRecord) {
+      game1.saveRecord("key", key);
+    }
+    if (equip > equipRecord) {
+      game1.saveRecord("equip", equip);
+    }
+  }
+
   private void getPlayer(GameLogic game) {
     this.player = game.getPlayer();
   }
@@ -714,8 +905,15 @@ public class Gui {
   private void setAreaStatsTitle() {
     Label areaStatsTitleLabel1 = new Label("Area");
     Label areaStatsTitleLabel2 = new Label("Areas Discovered");
+    Label areaStatsTitleLabel3 = new Label("Monsters Killed");
     areaStatisticsPane.add(areaStatsTitleLabel1, 0, 0);
     areaStatisticsPane.add(areaStatsTitleLabel2, 1, 0);
+    areaStatisticsPane.add(areaStatsTitleLabel3, 2, 0);
+    GridPane.setHalignment(areaStatsTitleLabel1, HPos.CENTER);
+    GridPane.setHalignment(areaStatsTitleLabel2, HPos.CENTER);
+    GridPane.setHalignment(areaStatsTitleLabel3, HPos.CENTER);
+
+    areaStatisticsPane.setPadding(DEFAUL_INSETS);
   }
 
   private void setStartingAreaStats() {
@@ -731,12 +929,20 @@ public class Gui {
     // current row value is only used in setStartingAreaStats
     Label areaLabel = new Label(area.getName());
     Label areasDiscovered = new Label(area.getNumberAreasDiscovered());
+    int totalMonsters = area.getMonsterList().size();
+    int monstersKilled = player.monsterKillCheck(area);
+    Label monstersDiscovered = new Label(monstersKilled + "/" + totalMonsters);
     // -1 used as impossible index to be overwritten in all other cases
     if (row == -1) {
       row = discoveredAreas.size() + 1;
     }
     areaStatisticsPane.add(areaLabel, 0, row);
     areaStatisticsPane.add(areasDiscovered, 1, row);
+    areaStatisticsPane.add(monstersDiscovered, 2, row);
+
+    GridPane.setHalignment(areasDiscovered, HPos.CENTER);
+    GridPane.setHalignment(monstersDiscovered, HPos.CENTER);
+
   }
 
   private void setHpBarAndLevel() {
@@ -841,6 +1047,43 @@ public class Gui {
     statisticsButton.setOnAction(event -> {
       setSubMenu(statisticsMenu, scrollableAreaStats);
     });
+  }
+
+  public void createScrollableRunStats() {
+    this.runStats = player.getRunStats();
+    this.exploreCount = intToIntegerProperty(runStats.getStatTimesExplored());
+    this.areaCount = intToIntegerProperty(runStats.getStatAreasDiscovered());
+    this.eventCount = intToIntegerProperty(runStats.getStatEventsDiscovered());
+    this.monFindCount = intToIntegerProperty(runStats.getStatMonstersFound());
+    this.monKillCount = intToIntegerProperty(runStats.getStatMonstersKilled());
+    this.uniqueMonCount = intToIntegerProperty(runStats.getStatDifferentMonsters());
+    this.keyCount = intToIntegerProperty(runStats.getStatKeyItemsFound());
+    this.equipCount = intToIntegerProperty(runStats.getStatItemsFound());
+    Label playerLevelLabel2 = new SimpleBindingIntegerLabel("Level: ", this.playerLevel, "");
+
+    runStatisticsPane.add(playerLevelLabel2, 0, 1);
+
+    SimpleBindingIntegerLabel exploreCountLabel = new SimpleBindingIntegerLabel("Times Explored: ", this.exploreCount,
+        "");
+    SimpleBindingIntegerLabel areaCountLabel = new SimpleBindingIntegerLabel("Areas Found: ", this.areaCount, "");
+    SimpleBindingIntegerLabel eventCountLabel = new SimpleBindingIntegerLabel("Events Found: ", this.eventCount, "");
+    SimpleBindingIntegerLabel monFindCountLabel = new SimpleBindingIntegerLabel("Monsters Found: ",
+        this.monFindCount, "");
+    SimpleBindingIntegerLabel monKillCountLabel = new SimpleBindingIntegerLabel("Total Monsters Killed: ",
+        this.monKillCount, "");
+    SimpleBindingIntegerLabel uniqueMonCountLabel = new SimpleBindingIntegerLabel("Unique Monsters Killed: ",
+        this.uniqueMonCount, "");
+    SimpleBindingIntegerLabel keyCountLabel = new SimpleBindingIntegerLabel("Key Items Found: ", this.keyCount, "");
+    SimpleBindingIntegerLabel equipCountLabel = new SimpleBindingIntegerLabel("Equipment Found: ", this.equipCount, "");
+
+    runStatisticsPane.add(exploreCountLabel, 0, 2);
+    runStatisticsPane.add(areaCountLabel, 0, 3);
+    runStatisticsPane.add(eventCountLabel, 0, 4);
+    runStatisticsPane.add(monFindCountLabel, 0, 5);
+    runStatisticsPane.add(monKillCountLabel, 0, 6);
+    runStatisticsPane.add(uniqueMonCountLabel, 0, 7);
+    runStatisticsPane.add(keyCountLabel, 0, 8);
+    runStatisticsPane.add(equipCountLabel, 0, 9);
   }
 
   private void getPlayerStats() {
