@@ -88,41 +88,43 @@ public class MenuGui {
     private void onStats() {
         menu.getChildren().clear();
         menu.add(statsMenu, 0, 0);
+        // if menu not accessed before, create elements
+        if (statsMenu.getChildren().size() == 0) {
+            // top menu of statistics pane
+            statsMenu.add(statSubMenu, 0, 0);
+            Button records = new Button("Records");
+            Button areas = new Button("Areas");
+            Button monsters = new Button("Monsters");
+            Button items = new Button("Items");
+            Button backButton = createBackButton();
+            // add buttons to top menu
+            statSubMenu.add(records, 0, 0);
+            statSubMenu.add(areas, 1, 0);
+            statSubMenu.add(monsters, 2, 0);
+            statSubMenu.add(items, 3, 0);
+            statsMenu.add(backButton, 4, 0);
+            GridPane.setHalignment(backButton, HPos.RIGHT);
 
-        // top menu of statistics pane
-        statsMenu.add(statSubMenu, 0, 0);
-        Button records = new Button("Records");
-        Button areas = new Button("Areas");
-        Button monsters = new Button("Monsters");
-        Button items = new Button("Items");
-        Button backButton = createBackButton();
+            // bind buttons
+            records.setOnAction(event -> {
+                createRecordPage();
+            });
+            areas.setOnAction(event -> {
+                createAreasPage();
+            });
+            monsters.setOnAction(event -> {
+                createMonstersPage();
+            });
+            items.setOnAction(event -> {
+                createItemsPage();
+            });
 
-        // add buttons to top menu
-        statSubMenu.add(records, 0, 0);
-        statSubMenu.add(areas, 1, 0);
-        statSubMenu.add(monsters, 2, 0);
-        statSubMenu.add(items, 3, 0);
-        statsMenu.add(backButton, 4, 0);
-        GridPane.setHalignment(backButton, HPos.RIGHT);
-        // create pane for records
-        statsMenu.add(statsPane, 0, 1);
-        GridPane.setColumnSpan(statsPane, 5);
-        statsPane.setStyle(BORDER_STYLE);
-        statsPane.setPrefSize(MENU_WIDTH, MENU_HEIGHT);
-
-        // bind buttons
-        records.setOnAction(event -> {
-            createRecordPage();
-        });
-        areas.setOnAction(event -> {
-            createAreasPage();
-        });
-        monsters.setOnAction(event -> {
-            createMonstersPage();
-        });
-        items.setOnAction(event -> {
-            createItemsPage();
-        });
+            // create pane for records
+            statsMenu.add(statsPane, 0, 1);
+            GridPane.setColumnSpan(statsPane, 5);
+            statsPane.setStyle(BORDER_STYLE);
+            statsPane.setPrefSize(MENU_WIDTH, MENU_HEIGHT);
+        }
     }
 
     private void setAllPanes() {
