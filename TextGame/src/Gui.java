@@ -619,6 +619,7 @@ public class Gui {
     ObservableList<Node> elements = root.getChildren();
     elements.remove(exploreButton);
     elements.remove(areaSelect);
+    backpackMenu.getChildren().clear();
     root.add(statScreenButton, 2, 4);
   }
 
@@ -698,15 +699,25 @@ public class Gui {
     int uniqueMonKillRecord = record.getOrDefault("uniqueMonKill", 0);
     int keyRecord = record.getOrDefault("key", 0);
     int equipRecord = record.getOrDefault("equip", 0);
-    statScreen.add(new RecordLabel(intToIntegerProperty(levelRecord)), 2, 1);
-    statScreen.add(new RecordLabel(intToIntegerProperty(exploreRecord)), 2, 2);
-    statScreen.add(new RecordLabel(intToIntegerProperty(areaRecord)), 2, 3);
-    statScreen.add(new RecordLabel(intToIntegerProperty(eventsRecord)), 2, 4);
-    statScreen.add(new RecordLabel(intToIntegerProperty(monFindRecord)), 2, 5);
-    statScreen.add(new RecordLabel(intToIntegerProperty(monKillRecord)), 2, 6);
-    statScreen.add(new RecordLabel(intToIntegerProperty(uniqueMonKillRecord)), 2, 7);
-    statScreen.add(new RecordLabel(intToIntegerProperty(keyRecord)), 2, 8);
-    statScreen.add(new RecordLabel(intToIntegerProperty(equipRecord)), 2, 9);
+    RecordLabel levelRecordLabel = new RecordLabel(intToIntegerProperty(levelRecord));
+    RecordLabel exploreRecordLabel = new RecordLabel(intToIntegerProperty(exploreRecord));
+    RecordLabel areaRecordLabel = new RecordLabel(intToIntegerProperty(areaRecord));
+    RecordLabel eventsRecordLabel = new RecordLabel(intToIntegerProperty(eventsRecord));
+    RecordLabel monFindRecordLabel = new RecordLabel(intToIntegerProperty(monFindRecord));
+    RecordLabel monKillRecordLabel = new RecordLabel(intToIntegerProperty(monKillRecord));
+    RecordLabel uniqueMonKillRecordLabel = new RecordLabel(intToIntegerProperty(uniqueMonKillRecord));
+    RecordLabel keyRecordLabel = new RecordLabel(intToIntegerProperty(keyRecord));
+    RecordLabel equipRecordLabel = new RecordLabel(intToIntegerProperty(equipRecord));
+    // add labels
+    statScreen.add(levelRecordLabel, 2, 1);
+    statScreen.add(exploreRecordLabel, 2, 2);
+    statScreen.add(areaRecordLabel, 2, 3);
+    statScreen.add(eventsRecordLabel, 2, 4);
+    statScreen.add(monFindRecordLabel, 2, 5);
+    statScreen.add(monKillRecordLabel, 2, 6);
+    statScreen.add(uniqueMonKillRecordLabel, 2, 7);
+    statScreen.add(keyRecordLabel, 2, 8);
+    statScreen.add(equipRecordLabel, 2, 9);
     // add colour to thisRun and save if this run > record
     if (level >= levelRecord && level != 0) {
       game1.saveRecord("level", level);
@@ -745,32 +756,32 @@ public class Gui {
       thisRunEquipLabel.setTextFill(recordColor);
     }
     // add colour to record if thisRun < record
-    if (level <= levelRecord && level != 0) {
-      thisRunLevelLabel.setTextFill(recordColor);
+    if (level <= levelRecord) {
+      levelRecordLabel.setTextFill(recordColor);
     }
-    if (explore <= exploreRecord && explore != 0) {
-      thisRunExploreLabel.setTextFill(recordColor);
+    if (explore <= exploreRecord) {
+      exploreRecordLabel.setTextFill(recordColor);
     }
-    if (area <= areaRecord && area != 0) {
-      thisRunAreaLabel.setTextFill(recordColor);
+    if (area <= areaRecord) {
+      areaRecordLabel.setTextFill(recordColor);
     }
-    if (event <= eventsRecord && event != 0) {
-      thisRunEventLabel.setTextFill(recordColor);
+    if (event <= eventsRecord) {
+      eventsRecordLabel.setTextFill(recordColor);
     }
-    if (monFind > monFindRecord && monFind != 0) {
-      thisRunMonFindLabel.setTextFill(recordColor);
+    if (monFind > monFindRecord) {
+      monFindRecordLabel.setTextFill(recordColor);
     }
-    if (monKill <= monKillRecord && monKill != 0) {
-      thisRunMonKillLabel.setTextFill(recordColor);
+    if (monKill <= monKillRecord) {
+      monKillRecordLabel.setTextFill(recordColor);
     }
-    if (uniqueMon <= uniqueMonKillRecord && uniqueMon != 0) {
-      thisRunUniqueMonLabel.setTextFill(recordColor);
+    if (uniqueMon <= uniqueMonKillRecord) {
+      uniqueMonKillRecordLabel.setTextFill(recordColor);
     }
-    if (key <= keyRecord && key != 0) {
-      thisRunKeyLabel.setTextFill(recordColor);
+    if (key <= keyRecord) {
+      keyRecordLabel.setTextFill(recordColor);
     }
-    if (equip <= equipRecord && equip != 0) {
-      thisRunEquipLabel.setTextFill(recordColor);
+    if (equip <= equipRecord) {
+      equipRecordLabel.setTextFill(recordColor);
     }
   }
 

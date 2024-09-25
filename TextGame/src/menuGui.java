@@ -8,28 +8,33 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 
 public class MenuGui {
-    private static final int WINDOW_WIDTH = 500;
-    private static final int WINDOW_HEIGHT = 500;
+    private static final int WINDOW_WIDTH = 1400;
+    private static final int WINDOW_HEIGHT = 900;
+    private static final int MENU_WIDTH = 1000;
+    private static final int MENU_HEIGHT = 600;
     private static final Insets DEFAUL_INSETS = new Insets(10, 10, 10, 10);
     private static final int GRIDPANE_GAPS = 10;
+    private static final String BORDER_STYLE = "-fx-border-color: black; -fx-border-width: 2px;";
     private Stage primaryStage;
     private DatabaseManager db;
     private GridPane menu = new GridPane();
     private Button newGameButton = new Button("New Game");
     private Button loadGameButton = new Button("Load Game");
+    private Button statsButton = new Button("Statistics");
     private GridPane loadMenu = new GridPane();
     private Button loadSave = new Button("Load");
     private int activeSaveNumber;
     private int howManySaves;
+    private GridPane statsMenu = new GridPane();
+    private GridPane statSubMenu = new GridPane();
+    private GridPane statsPane = new GridPane();
 
     public MenuGui(Stage primaryStage, DatabaseManager db) {
         this.primaryStage = primaryStage;
         this.db = db;
 
         // main layout manager
-        menu.setHgap(GRIDPANE_GAPS);
-        menu.setVgap(GRIDPANE_GAPS);
-        menu.setPadding(DEFAUL_INSETS);
+        setAllPanes();
         menu.setAlignment(Pos.CENTER);
 
         createMenu();
@@ -52,13 +57,11 @@ public class MenuGui {
         menu.getChildren().clear();
         this.howManySaves = db.howManySaves();
 
-        loadMenu.setHgap(GRIDPANE_GAPS);
-        loadMenu.setVgap(GRIDPANE_GAPS);
-        loadMenu.setPadding(DEFAUL_INSETS);
-
         // add load button and titles
         addLoadElements();
-        addBackButton();
+        Button backButton = createBackButton();
+
+        loadMenu.add(backButton, 5, howManySaves + 5);
 
         menu.add(loadMenu, 0, 0);
 
@@ -82,6 +85,60 @@ public class MenuGui {
         }
     }
 
+    private void onStats() {
+        menu.getChildren().clear();
+        menu.add(statsMenu, 0, 0);
+
+        // top menu of statistics pane
+        statsMenu.add(statSubMenu, 0, 0);
+        Button records = new Button("Records");
+        Button areas = new Button("Areas");
+        Button monsters = new Button("Monsters");
+        Button items = new Button("Items");
+        Button backButton = createBackButton();
+
+        // add buttons to top menu
+        statSubMenu.add(records, 0, 0);
+        statSubMenu.add(areas, 1, 0);
+        statSubMenu.add(monsters, 2, 0);
+        statSubMenu.add(items, 3, 0);
+        statsMenu.add(backButton, 4, 0);
+        GridPane.setHalignment(backButton, HPos.RIGHT);
+        // create pane for records
+        statsMenu.add(statsPane, 0, 1);
+        GridPane.setColumnSpan(statsPane, 5);
+        statsPane.setStyle(BORDER_STYLE);
+        statsPane.setPrefSize(MENU_WIDTH, MENU_HEIGHT);
+
+        // bind buttons
+        records.setOnAction(event -> {
+            createRecordPage();
+        });
+        areas.setOnAction(event -> {
+            createAreasPage();
+        });
+        monsters.setOnAction(event -> {
+            createMonstersPage();
+        });
+        items.setOnAction(event -> {
+            createItemsPage();
+        });
+    }
+
+    private void setAllPanes() {
+        setGridPane(menu);
+        setGridPane(statsPane);
+        setGridPane(statsMenu);
+        setGridPane(statSubMenu);
+        setGridPane(loadMenu);
+    }
+
+    private void setGridPane(GridPane gridPane) {
+        gridPane.setHgap(GRIDPANE_GAPS);
+        gridPane.setVgap(GRIDPANE_GAPS);
+        gridPane.setPadding(DEFAUL_INSETS);
+    }
+
     private void addLoadElements() {
         loadMenu.add(new Label("Save"), 0, 0);
         loadMenu.add(new Label("Areas Found"), 1, 0);
@@ -100,12 +157,12 @@ public class MenuGui {
         });
     }
 
-    private void addBackButton() {
+    private Button createBackButton() {
         Button backButton = new Button("Back");
         backButton.setOnAction(event -> {
             returnToMainMenu();
         });
-        loadMenu.add(backButton, 5, howManySaves + 5);
+        return backButton;
     }
 
     private void addDeleteButton() {
@@ -155,9 +212,29 @@ public class MenuGui {
         loadGameButton.setOnAction(event -> {
             onLoadGame();
         });
+        statsButton.setOnAction(event -> {
+            onStats();
+        });
 
         menu.add(newGameButton, 0, 0);
         menu.add(loadGameButton, 0, 1);
+        menu.add(statsButton, 0, 2);
+    }
+
+    private void createRecordPage() {
+
+    }
+
+    private void createAreasPage() {
+
+    }
+
+    private void createMonstersPage() {
+
+    }
+
+    private void createItemsPage() {
+
     }
 
 }
