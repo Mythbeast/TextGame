@@ -52,6 +52,7 @@ public class Gui {
   private static final int GRIDPANE_GAPS = 10;
   private static final String BORDER_STYLE = "-fx-border-color: black; -fx-border-width: 2px;";
   private static final int RUN_STATISTICS_START = 11;
+  private static final Color recordColor = Color.GOLDENROD;
 
   // core variables
   private static GameLogic game1;
@@ -72,6 +73,7 @@ public class Gui {
   // player Ui variables
   private GridPane playerUi = new GridPane();
   // variables for managing player stats
+  private GridPane playerStats;
   private IntegerProperty playerAttack;
   private IntegerProperty playerDefence;
   private IntegerProperty playerCritChance;
@@ -87,23 +89,23 @@ public class Gui {
   private IntegerProperty playerCurrentHpVisible;
   private IntegerProperty playerMaxHpVisible;
   // equipment variables
-  private GridPane playerEquipment = new GridPane();
-  private StringProperty playerWeapon = stringToStringProperty("");;
-  private StringProperty playerShield = stringToStringProperty("");;
-  private StringProperty playerArmour = stringToStringProperty("");;
-  private StringProperty playerBoots = stringToStringProperty("");;
-  private StringProperty playerHelmet = stringToStringProperty("");;
-  private StringProperty playerRing = stringToStringProperty("");;
-  private GridPane playerItemStats = new GridPane();
-  private IntegerProperty playerItemHp = intToIntegerProperty(0);
-  private IntegerProperty playerItemAttack = intToIntegerProperty(0);
-  private IntegerProperty playerItemDefence = intToIntegerProperty(0);
-  private IntegerProperty playerItemCritChance = intToIntegerProperty(0);
-  private IntegerProperty playerItemCritDamage = intToIntegerProperty(0);
+  private GridPane playerEquipment;
+  private StringProperty playerWeapon;
+  private StringProperty playerShield;
+  private StringProperty playerArmour;
+  private StringProperty playerBoots;
+  private StringProperty playerHelmet;
+  private StringProperty playerRing;
+  private GridPane playerItemStats;
+  private IntegerProperty playerItemHp;
+  private IntegerProperty playerItemAttack;
+  private IntegerProperty playerItemDefence;
+  private IntegerProperty playerItemCritChance;
+  private IntegerProperty playerItemCritDamage;
   // Labels to show player HP and level
-  private SimpleBindingIntegerLabel playerLevelLabel = new SimpleBindingIntegerLabel("Level: ", this.playerLevel, "");
+  private SimpleBindingIntegerLabel playerLevelLabel;
   private Label playerHpTextLabel = new Label();
-  private SimpleBindingIntegerLabel playerItemHpLabel = new SimpleBindingIntegerLabel("(", this.playerItemHp, ")");
+  private SimpleBindingIntegerLabel playerItemHpLabel;
   // monster Ui variables
   private GridPane monsterUi = new GridPane();
   private Label monsterName;
@@ -152,6 +154,8 @@ public class Gui {
 
   public Gui(Stage primaryStage) {
     this.stage = primaryStage;
+
+    createVariables();
 
     // main layout manager
     root.setHgap(GRIDPANE_GAPS);
@@ -624,6 +628,7 @@ public class Gui {
     statScreen.setPadding(DEFAUL_INSETS);
     createStatScreenText();
     createStatsForRecords(record);
+    createBackAndMenuButtons();
 
     root.add(statScreen, 0, 0);
 
@@ -702,34 +707,128 @@ public class Gui {
     statScreen.add(new RecordLabel(intToIntegerProperty(uniqueMonKillRecord)), 2, 7);
     statScreen.add(new RecordLabel(intToIntegerProperty(keyRecord)), 2, 8);
     statScreen.add(new RecordLabel(intToIntegerProperty(equipRecord)), 2, 9);
-    // add colour if this run > record
-    if (level > levelRecord) {
+    // add colour to thisRun and save if this run > record
+    if (level >= levelRecord && level != 0) {
       game1.saveRecord("level", level);
+      thisRunLevelLabel.setTextFill(recordColor);
     }
-    if (explore > exploreRecord) {
+    if (explore >= exploreRecord && explore != 0) {
       game1.saveRecord("explore", explore);
+      thisRunExploreLabel.setTextFill(recordColor);
     }
-    if (area > areaRecord) {
+    if (area >= areaRecord && area != 0) {
       game1.saveRecord("area", area);
+      thisRunAreaLabel.setTextFill(recordColor);
     }
-    if (event > eventsRecord) {
+    if (event >= eventsRecord && event != 0) {
       game1.saveRecord("event", event);
+      thisRunEventLabel.setTextFill(recordColor);
     }
-    if (monFind > monFindRecord) {
+    if (monFind > monFindRecord && monFind != 0) {
       game1.saveRecord("monFind", monFind);
+      thisRunMonFindLabel.setTextFill(recordColor);
     }
-    if (monKill > monKillRecord) {
+    if (monKill >= monKillRecord && monKill != 0) {
       game1.saveRecord("monKill", monKill);
+      thisRunMonKillLabel.setTextFill(recordColor);
     }
-    if (uniqueMon > uniqueMonKillRecord) {
+    if (uniqueMon >= uniqueMonKillRecord && uniqueMon != 0) {
       game1.saveRecord("uniqueMonKill", uniqueMon);
+      thisRunUniqueMonLabel.setTextFill(recordColor);
     }
-    if (key > keyRecord) {
+    if (key >= keyRecord && key != 0) {
       game1.saveRecord("key", key);
+      thisRunKeyLabel.setTextFill(recordColor);
     }
-    if (equip > equipRecord) {
+    if (equip >= equipRecord && equip != 0) {
       game1.saveRecord("equip", equip);
+      thisRunEquipLabel.setTextFill(recordColor);
     }
+    // add colour to record if thisRun < record
+    if (level <= levelRecord && level != 0) {
+      thisRunLevelLabel.setTextFill(recordColor);
+    }
+    if (explore <= exploreRecord && explore != 0) {
+      thisRunExploreLabel.setTextFill(recordColor);
+    }
+    if (area <= areaRecord && area != 0) {
+      thisRunAreaLabel.setTextFill(recordColor);
+    }
+    if (event <= eventsRecord && event != 0) {
+      thisRunEventLabel.setTextFill(recordColor);
+    }
+    if (monFind > monFindRecord && monFind != 0) {
+      thisRunMonFindLabel.setTextFill(recordColor);
+    }
+    if (monKill <= monKillRecord && monKill != 0) {
+      thisRunMonKillLabel.setTextFill(recordColor);
+    }
+    if (uniqueMon <= uniqueMonKillRecord && uniqueMon != 0) {
+      thisRunUniqueMonLabel.setTextFill(recordColor);
+    }
+    if (key <= keyRecord && key != 0) {
+      thisRunKeyLabel.setTextFill(recordColor);
+    }
+    if (equip <= equipRecord && equip != 0) {
+      thisRunEquipLabel.setTextFill(recordColor);
+    }
+  }
+
+  private void createBackAndMenuButtons() {
+    Button backButton = new Button("Main Menu");
+    backButton.setOnAction(event -> {
+      returnToMainMenu();
+    });
+    Button retry = new Button("Retry");
+    retry.setOnAction(event -> {
+      root.getChildren().clear();
+      resetGui();
+      game1.restartGame();
+    });
+
+    statScreen.add(retry, 0, 10);
+    statScreen.add(backButton, 1, 10);
+  }
+
+  private void resetGui() {
+    removeEvent();
+    removeMonster();
+    this.discoveredAreas.removeAll();
+    this.areaStatisticsPane.getChildren().clear();
+    this.backpackButtonBox.getChildren().clear();
+    this.playerStats.getChildren().clear();
+    this.playerEquipment.getChildren().clear();
+    this.playerItemStats.getChildren().clear();
+    this.keyItemButtonBox.getChildren().clear();
+    this.textBox.getChildren().clear();
+    this.runStatisticsPane.getChildren().clear();
+    this.statScreen.getChildren().clear();
+    createVariables();
+
+  }
+
+  private void createVariables() {
+    this.discoveredAreasArrayList = new ArrayList<String>();
+    this.playerEquipment = new GridPane();
+    this.playerWeapon = stringToStringProperty("");
+    this.playerShield = stringToStringProperty("");
+    this.playerArmour = stringToStringProperty("");
+    this.playerBoots = stringToStringProperty("");
+    this.playerHelmet = stringToStringProperty("");
+    this.playerRing = stringToStringProperty("");
+    this.playerItemStats = new GridPane();
+    this.playerItemHp = intToIntegerProperty(0);
+    this.playerItemAttack = intToIntegerProperty(0);
+    this.playerItemDefence = intToIntegerProperty(0);
+    this.playerItemCritChance = intToIntegerProperty(0);
+    this.playerItemCritDamage = intToIntegerProperty(0);
+    this.playerLevelLabel = new SimpleBindingIntegerLabel("Level: ", this.playerLevel, "");
+    this.playerItemHpLabel = new SimpleBindingIntegerLabel("(", this.playerItemHp, ")");
+  }
+
+  private void returnToMainMenu() {
+    root.getChildren().clear();
+    MenuGui menuGui = new MenuGui(stage, game1.getDatabaseManager());
   }
 
   private void getPlayer(GameLogic game) {
@@ -808,7 +907,7 @@ public class Gui {
   }
 
   private void createPlayerGridPane() {
-    GridPane playerStats = new GridPane();
+    this.playerStats = new GridPane();
     Label playerStatsTitleLabel = new Label("Player Stats:");
     SimpleBindingIntegerLabel playerAttackLabel = new SimpleBindingIntegerLabel("Attack: ", this.playerAttack, "");
     SimpleBindingIntegerLabel playerDefenceLabel = new SimpleBindingIntegerLabel("Defence: ", this.playerDefence, "");

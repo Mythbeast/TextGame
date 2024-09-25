@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.List;
 import java.util.Random;
 
+import javafx.scene.chart.PieChart.Data;
 import javafx.scene.paint.Color;
 
 public class GameLogic {
@@ -75,8 +76,20 @@ public class GameLogic {
     }
   }
 
+  public void restartGame() {
+    this.saveNumber = 0;
+    combat = false;
+    event = false;
+    eventWarning = 0;
+    makeGame();
+  }
+
   public Player getPlayer() {
     return this.player;
+  }
+
+  public DatabaseManager getDatabaseManager() {
+    return this.db;
   }
 
   private void makeGame() {

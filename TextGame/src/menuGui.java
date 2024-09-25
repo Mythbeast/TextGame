@@ -7,7 +7,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 
-public class menuGui {
+public class MenuGui {
     private static final int WINDOW_WIDTH = 500;
     private static final int WINDOW_HEIGHT = 500;
     private static final Insets DEFAUL_INSETS = new Insets(10, 10, 10, 10);
@@ -22,7 +22,7 @@ public class menuGui {
     private int activeSaveNumber;
     private int howManySaves;
 
-    public menuGui(Stage primaryStage, DatabaseManager db) {
+    public MenuGui(Stage primaryStage, DatabaseManager db) {
         this.primaryStage = primaryStage;
         this.db = db;
 
