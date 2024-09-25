@@ -768,7 +768,7 @@ public class Gui {
     if (event <= eventsRecord) {
       eventsRecordLabel.setTextFill(recordColor);
     }
-    if (monFind > monFindRecord) {
+    if (monFind <= monFindRecord) {
       monFindRecordLabel.setTextFill(recordColor);
     }
     if (monKill <= monKillRecord) {
