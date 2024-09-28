@@ -1,5 +1,0 @@
-Added Run statistics menu with several stats being tracked
-added RunStatList class to manage this
-added code to Player and GameLogic to update run stats
-added RunStatList to saving and loading game
-added statScreen and death now stops play
