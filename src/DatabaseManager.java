@@ -13,12 +13,8 @@ import java.util.HashSet;
 // TODO: Add player database for saved games.
 
 public class DatabaseManager {
-<<<<<<< HEAD
   String currentDirectory = System.getProperty("user.dir");
   String location = "jdbc:sqlite:" + currentDirectory + "\\TextGame\\game.db";
-=======
-  String location = "jdbc:sqlite:C:\\Temp\\TextGame\\game.db";
->>>>>>> db0f18f063f749eb5d1efb6ef8b84df5414d43e7
   private Connection conn;
 
   public DatabaseManager() {
@@ -678,24 +674,6 @@ public class DatabaseManager {
     return -2;
   }
 
-<<<<<<< HEAD
-  public Connection connect() {
-    Connection conn = null;
-    try {
-      // Load the SQLite JDBC driver
-      Class.forName("org.sqlite.JDBC");
-
-      String url = "jdbc:sqlite:C:/Coding Projects/TextGame/game.db";
-      conn = DriverManager.getConnection(url);
-      // Your existing connection logic here
-
-    } catch (ClassNotFoundException e) {
-      System.out.println("JDBC Driver not found: " + e.getMessage());
-      e.printStackTrace(); // Optional: Print stack trace for debugging
-    } catch (SQLException e) {
-      System.out.println("SQL Error: " + e.getMessage());
-      e.printStackTrace(); // Optional: Print stack trace for debugging
-=======
   private Connection connect() {
     // connect to database
     Connection conn = null;
@@ -705,7 +683,6 @@ public class DatabaseManager {
     } catch (SQLException e) {
       System.out.println(e.getMessage());
       e.printStackTrace();
->>>>>>> db0f18f063f749eb5d1efb6ef8b84df5414d43e7
     }
     return conn;
   }

@@ -1213,16 +1213,11 @@ public class Gui {
     for (HashMap.Entry<String, Integer> entry : combatStats.entrySet()) {
       String stat = entry.getKey();
       Integer value = entry.getValue();
-<<<<<<< HEAD
       // space added to separate stats
       statPrint = statPrint + stat + value + ", ";
     }
     // -2 used to remove comma and excess space from final stat
     statPrint = statPrint.substring(0, statPrint.length() - 2);
-=======
-      statPrint = statPrint + stat + value + "   ";
-    }
->>>>>>> db0f18f063f749eb5d1efb6ef8b84df5414d43e7
     return statPrint;
   }
 
