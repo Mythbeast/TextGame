@@ -319,7 +319,11 @@ public class GameLogic {
 
       // if there is a resultText
       if (resultText != null) {
+<<<<<<< HEAD
         gui.print(resultText, Color.BLACK, resultText);
+=======
+        gui.print(resultText, Color.BLACK, null);
+>>>>>>> db0f18f063f749eb5d1efb6ef8b84df5414d43e7
       }
 
       // manage item changes
