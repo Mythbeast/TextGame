@@ -1,4 +1,4 @@
-public class saveInfo {
+public class SaveInfo {
     private int areasDiscovered;
     private int level;
     private String gameMode;
