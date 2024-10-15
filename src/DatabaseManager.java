@@ -503,7 +503,7 @@ public class DatabaseManager {
     }
   }
 
-  public saveInfo getSaveInfo(int saveNumber) {
+  public SaveInfo getSaveInfo(int saveNumber) {
     String sql = "SELECT ArrayListName, String, Value FROM SavedGame WHERE saveNumber = ?";
 
     try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -529,12 +529,12 @@ public class DatabaseManager {
         }
       }
       int areasDiscovered = areaIds.size();
-      return new saveInfo(areasDiscovered, level, "explore");
+      return new SaveInfo(areasDiscovered, level, "explore");
 
     } catch (SQLException e) {
       System.out.println(e.getMessage());
       System.out.println("Error: loadSave error");
-      return new saveInfo(0, saveNumber, "explore");
+      return new SaveInfo(0, saveNumber, "explore");
     }
   }
 

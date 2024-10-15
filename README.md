@@ -15,3 +15,4 @@ To run:
     sl4j-simple-2.-0.16.jar
     sqlite-jdbc-3.46.1.0.jar
 - ensure all files are within a folder called TextGame which is inside the workspace folder.
+- move .vscode to the folder containing the TextGame folder.

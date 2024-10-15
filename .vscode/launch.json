@@ -1,14 +1,13 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "type": "java",
-            "name": "Launch Main",
-            "request": "launch",
-            "mainClass": "Main",
-            "vmArgs": "--module-path \"C:/Temp/TextGame/lib/javafx-sdk-22.0.2/lib\" --add-modules javafx.controls,javafx.fxml",
-            "projectName": "TextGame_6ec38ee2",
-            "cwd": "C:/Temp/TextGame"
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Run main",
+      "request": "launch",
+      "mainClass": "Main",
+      "vmArgs": "--module-path \"C:/Program Files/Java/javafx-sdk-22.0.2/lib\" --add-modules javafx.controls,javafx.fxml",
+      "projectName": "Coding Projects_7dc77eb8"
+    }
+  ]
 }

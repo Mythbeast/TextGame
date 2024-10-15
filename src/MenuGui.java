@@ -183,7 +183,7 @@ public class MenuGui {
     }
 
     private void showSaveDetails(int saveNumber) {
-        saveInfo info = db.getSaveInfo(saveNumber);
+        SaveInfo info = db.getSaveInfo(saveNumber);
         if (info.getAreasDiscovered() != 0) {
 
             String areasDiscovered = String.valueOf(info.getAreasDiscovered());
