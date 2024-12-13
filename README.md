@@ -2,6 +2,8 @@ First project created using javafx and first project using a database and SQL.
 Text based adventure game with player and monster UI and menus to see stats, key items and equipment etc. 
 Screenshot to showcase application.
 
+![screenshot]([https://github.com/Mythbeast/TextGame)
+
 Features:
 Database with related tables, containing monster info, area info, item info, key items, etc
 Gui which displays all necessary player info and equipment, monster stats, etc
